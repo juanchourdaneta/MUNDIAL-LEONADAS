@@ -61,7 +61,8 @@
     </div>
 
     <script>
-        // URL de tu Google Apps Script (asegúrate de haber actualizado a una "Nueva Versión" tras cambiar a doGet)
+       <script>
+// URL de tu Google Apps Script
 const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
 
 document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -83,43 +84,45 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 
     const urlConParametro = `${URL_API}?Nombre=${encodeURIComponent(nombreUsuario)}`;
 
-// Forzamos el modo 'cors' pero le indicamos explícitamente que siga las redirecciones de Google
-fetch(urlConParametro, {
-    method: 'GET',
-    mode: 'cors',
-    redirect: 'follow', // <-- CRUCIAL: Esto le permite al navegador seguir el puente de Google
-    headers: {
-        'Content-Type': 'text/plain;charset=utf-8' // Evita que se dispare el preflight de CORS
-    }
-})
-.then(response => {
-    if (!response.ok) {
-        throw new Error('Error en la respuesta de la red');
-    }
-    return response.json(); // Ahora sí podemos leerlo como JSON directo
-})
-.then(data => {
-    if (data.encontrado) {
-        statusDiv.style.color = "green";
-        statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
-        
-        localStorage.setItem('usuarioParticipante', nombreUsuario);
-        
-        setTimeout(() => {
-            window.location.href = "pronostico.html"; 
-        }, 1200);
-    } else {
+    // Petición fetch con manejo de redirección para Google
+    fetch(urlConParametro, {
+        method: 'GET',
+        mode: 'cors',
+        redirect: 'follow', 
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8' 
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error en la respuesta de la red');
+        }
+        return response.json(); 
+    })
+    .then(data => {
+        if (data.encontrado) {
+            statusDiv.style.color = "green";
+            statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
+            
+            localStorage.setItem('usuarioParticipante', nombreUsuario);
+            
+            setTimeout(() => {
+                window.location.href = "pronostico.html"; 
+            }, 1200);
+        } else {
+            statusDiv.style.color = "red";
+            statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
+            boton.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error de conexión detallado:', error);
         statusDiv.style.color = "red";
-        statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
+        statusDiv.innerText = "Error de conexión con el servidor de Google.";
         boton.disabled = false;
-    }
-})
-.catch(error => {
-    console.error('Error de conexión detallado:', error);
-    statusDiv.style.color = "red";
-    statusDiv.innerText = "Error de conexión con el servidor de Google.";
-    boton.disabled = false;
-});
+    });
+}); // <-- ¡AQUÍ ESTABA EL ERROR! Faltaba cerrar el addEventListener
+</script>
     </script>
 
 </body>
