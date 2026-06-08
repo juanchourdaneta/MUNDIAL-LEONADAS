@@ -95,6 +95,10 @@
 
 <script>
     // Recuperamos el usuario autenticado en el login
+    // 🔽 AGREGA ESTA LÍNEA TEMPORALMENTE PARA PROBAR CON TU NOMBRE
+    localStorage.setItem('usuarioParticipante', 'Juancho'); 
+
+    // Recuperamos el usuario autenticado en el login
     const usuarioLogueado = localStorage.getItem('usuarioParticipante');
     
     if (!usuarioLogueado) {
