@@ -34,7 +34,7 @@
         <div class="form-group">
             <label for="grupo">Selecciona el Grupo:</label>
             <select id="grupo" required disabled>
-                <option value="">-- Consultando tus grupos... --</option>
+                <option value="">-- Consultando tus grupos en la base de datos... --</option>
                 <option value="Grupo A">Grupo A</option>
                 <option value="Grupo B">Grupo B</option>
                 <option value="Grupo C">Grupo C</option>
@@ -85,7 +85,7 @@
 </div>
 
 <script>
-    // 1. Control de Sesión
+    // 1. Control estricto de la sesión del participante
     let usuarioLogueado = localStorage.getItem('usuarioParticipante');
     if (!usuarioLogueado || usuarioLogueado.trim() === "") {
         usuarioLogueado = "Juancho"; 
@@ -98,7 +98,7 @@
         window.location.href = "index.html";
     });
 
-    // 2. Base de Datos de Equipos
+    // 2. Diccionario de Equipos
     const equiposPorGrupo = {
         "Grupo A": ["México", "Sudáfrica", "República de Corea", "Chequia"],
         "Grupo B": ["Canadá", "Bosnia", "Catar", "Suiza"],
@@ -114,49 +114,76 @@
         "Grupo L": ["Inglaterra", "Croacia", "Ghana", "Panamá"]
     };
 
+    // Almacenamos el HTML original completo del selector de grupos para poder restaurarlo limpiamente
+    const opcionesOriginalesGrupos = `
+        <option value="">-- Seleccionar Grupo --</option>
+        <option value="Grupo A">Grupo A</option>
+        <option value="Grupo B">Grupo B</option>
+        <option value="Grupo C">Grupo C</option>
+        <option value="Grupo D">Grupo D</option>
+        <option value="Grupo E">Grupo E</option>
+        <option value="Grupo F">Grupo F</option>
+        <option value="Grupo G">Grupo G</option>
+        <option value="Grupo H">Grupo H</option>
+        <option value="Grupo I">Grupo I</option>
+        <option value="Grupo J">Grupo J</option>
+        <option value="Grupo K">Grupo K</option>
+        <option value="Grupo L">Grupo L</option>
+    `;
+
     const selectorGrupo = document.getElementById('grupo');
     const selectoresPuestos = document.querySelectorAll('.puesto-select');
     const statusDiv = document.getElementById('status');
     const botonGuardar = document.getElementById('btnGuardar');
 
-    // URL de tu Google Apps Script (Tu cuenta de Gmail Personal)
+    // 🚨 REVISA ESTA URL: Asegúrate de que sea la de tu cuenta de correo PERSONAL (@gmail.com)
     const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
-    
-    // 3. CONSULTA DE GRUPOS DISPONIBLES AL CARGAR LA PÁGINA
+
+    // 3. FUNCIÓN DE CONSULTA Y FILTRADO REAL DE GRUPOS
     function consultarGruposDiligenciados() {
         selectorGrupo.disabled = true;
-        selectorGrupo.options[0].text = "-- Consultando tus grupos... --";
+        selectorGrupo.innerHTML = '<option value="">-- Consultando tus grupos en la base de datos... --</option>';
 
+        // Callback global para JSONP
         window.recibirGruposUsuario = function(res) {
             if (res.status === "success") {
-                const gruposCompletados = res.grupos; // Lista que viene de Google
+                // Restauramos todas las opciones originales en limpio
+                selectorGrupo.innerHTML = opcionesOriginalesGrupos;
 
-                // Recorremos las opciones del selector de grupos de atrás hacia adelante
+                // Pasamos los grupos que envió Google a un formato estándar (sin espacios, en minúsculas)
+                const gruposCompletados = res.grupos.map(g => g.toString().trim().toLowerCase());
+
+                // Analizamos cada opción del menú desplegable de atrás hacia adelante para remover los duplicados
                 for (let i = selectorGrupo.options.length - 1; i >= 1; i--) {
-                    const opcionValue = selectorGrupo.options[i].value;
+                    const valorOpcion = selectorGrupo.options[i].value.toString().trim().toLowerCase();
                     
-                    // Si el grupo ya fue guardado por este usuario, lo eliminamos del menú
-                    if (gruposCompletados.includes(opcionValue)) {
+                    // Si el grupo ya está guardado en el Sheets, lo removemos de la vista del usuario
+                    if (gruposCompletados.includes(valorOpcion)) {
                         selectorGrupo.remove(i);
                     }
                 }
 
-                // Si ya completó los 12 grupos
+                // Verificación final de la lista resultante
                 if (selectorGrupo.options.length === 1) {
-                    selectorGrupo.options[0].text = "¡Ya completaste todos los grupos! 🎉";
+                    selectorGrupo.options[0].text = "¡Completaste todos los grupos! 🎉";
                     statusDiv.style.backgroundColor = "#d4edda";
                     statusDiv.style.color = "#155724";
-                    statusDiv.innerText = "Muchas gracias. Ya has enviado tus 12 pronósticos con éxito.";
+                    statusDiv.innerText = "Ya has registrado los 12 grupos de la quiniela de manera exitosa.";
+                    botonGuardar.disabled = true;
                 } else {
                     selectorGrupo.options[0].text = "-- Seleccionar Grupo --";
                     selectorGrupo.disabled = false;
                     botonGuardar.disabled = false;
                 }
             } else {
-                selectorGrupo.options[0].text = "-- Error al cargar grupos --";
-                alert("No se pudieron validar tus grupos previos: " + res.message);
+                selectorGrupo.innerHTML = '<option value="">-- Error al sincronizar --</option>';
+                statusDiv.style.backgroundColor = "#f8d7da";
+                statusDiv.style.color = "#721c24";
+                statusDiv.innerText = "Error de sincronización con Google Sheets: " + res.message;
             }
-            document.getElementById('jsonpScriptCheck').remove();
+            
+            // Limpieza del elemento script inyectado
+            if (document.getElementById('jsonpScriptCheck')) document.getElementById('jsonpScriptCheck').remove();
         };
 
         const queryParams = `?Accion=verificar_grupos&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=recibirGruposUsuario`;
@@ -166,10 +193,10 @@
         document.body.appendChild(script);
     }
 
-    // Ejecutamos la consulta inmediatamente al entrar a la página
+    // Iniciamos la comprobación automática apenas carga el archivo
     consultarGruposDiligenciados();
 
-    // 4. Lógica de Descarte de países en selectores (La que ya tenías)
+    // 4. Lógica de Descarte Dinámico de Países (Evita duplicar países en los puestos)
     function actualizarSelectores() {
         const grupoSeleccionado = selectorGrupo.value;
         if (!grupoSeleccionado) return;
@@ -215,17 +242,16 @@
     document.getElementById('formPronostico').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const boton = document.getElementById('btnGuardar');
+        botonGuardar.disabled = true;
+        statusDiv.style.backgroundColor = "#e2e3e5";
+        statusDiv.style.color = "#383d41";
+        statusDiv.innerText = "Guardando en Google Sheets...";
+
         const g = selectorGrupo.value;
         const p1 = document.getElementById('puesto1').value;
         const p2 = document.getElementById('puesto2').value;
         const p3 = document.getElementById('puesto3').value;
         const p4 = document.getElementById('puesto4').value;
-
-        boton.disabled = true;
-        statusDiv.style.backgroundColor = "#e2e3e5";
-        statusDiv.style.color = "#383d41";
-        statusDiv.innerText = "Guardando en Google Sheets...";
 
         window.respuestaEscritura = function(res) {
             if (res.status === "success") {
@@ -239,13 +265,13 @@
                     select.disabled = true;
                 });
                 
-                // Volvemos a consultar a la base de datos para que borre el grupo recién diligenciado de la lista
+                // Relanzamos la validación para remover inmediatamente el grupo completado
                 consultarGruposDiligenciados();
             } else {
                 statusDiv.style.backgroundColor = "#f8d7da";
                 statusDiv.style.color = "#721c24";
                 statusDiv.innerText = "Error de Google: " + res.message;
-                boton.disabled = false;
+                botonGuardar.disabled = false;
             }
             if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
         };
