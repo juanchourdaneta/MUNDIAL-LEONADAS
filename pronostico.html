@@ -52,28 +52,28 @@
 
         <div class="form-group">
             <label for="puesto1">Primer Puesto:</label>
-            <select id="puesto1" required disabled>
+            <select id="puesto1" class="puesto-select" required disabled>
                 <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="puesto2">Segundo Puesto:</label>
-            <select id="puesto2" required disabled>
+            <select id="puesto2" class="puesto-select" required disabled>
                 <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="puesto3">Tercer Puesto:</label>
-            <select id="puesto3" required disabled>
+            <select id="puesto3" class="puesto-select" required disabled>
                 <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="puesto4">Cuarto Puesto:</label>
-            <select id="puesto4" required disabled>
+            <select id="puesto4" class="puesto-select" required disabled>
                 <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
@@ -85,21 +85,20 @@
 </div>
 
 <script>
-    // 1. Control y Respaldo de Sesión de Usuario (Evita congelamiento)
+    // 1. Control de Sesión
     let usuarioLogueado = localStorage.getItem('usuarioParticipante');
     if (!usuarioLogueado || usuarioLogueado.trim() === "") {
-        usuarioLogueado = "Juancho"; // Nombre de respaldo si el login falla
+        usuarioLogueado = "Juancho"; 
         localStorage.setItem('usuarioParticipante', usuarioLogueado);
     }
     document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
 
-    // Botón Cerrar Sesión
     document.getElementById('btnCerrarSesion').addEventListener('click', function() {
         localStorage.removeItem('usuarioParticipante');
         window.location.href = "index.html";
     });
 
-    // 2. Datos limpios en una sola línea sin saltos de texto ocultos
+    // 2. Base de Datos de Equipos
     const equiposPorGrupo = {
         "Grupo A": ["México", "Sudáfrica", "República de Corea", "Chequia"],
         "Grupo B": ["Canadá", "Bosnia", "Catar", "Suiza"],
@@ -115,15 +114,45 @@
         "Grupo L": ["Inglaterra", "Croacia", "Ghana", "Panamá"]
     };
 
-    // 3. Lógica para cambiar los países dinámicamente
     const selectorGrupo = document.getElementById('grupo');
-    const selectoresPuestos = [
-        document.getElementById('puesto1'),
-        document.getElementById('puesto2'),
-        document.getElementById('puesto3'),
-        document.getElementById('puesto4')
-    ];
+    // Seleccionamos los 4 desplegables usando su clase común
+    const selectoresPuestos = document.querySelectorAll('.puesto-select');
 
+    // 3. ACTUALIZACIÓN AUTOMÁTICA Y FILTRADO DE DUPLICADOS
+    
+    // Función encargada de renderizar las opciones permitidas en cada selector
+    function actualizarSelectores() {
+        const grupoSeleccionado = selectorGrupo.value;
+        if (!grupoSeleccionado) return;
+
+        const equiposBase = equiposPorGrupo[grupoSeleccionado];
+
+        // Mapeamos qué valores están seleccionados actualmente en el formulario
+        const valoresSeleccionados = Array.from(selectoresPuestos).map(select => select.value);
+
+        selectoresPuestos.forEach((selectActual, indexActual) => {
+            const valorGuardado = selectActual.value; // Respaldamos lo que el usuario ya eligió
+
+            // Reiniciamos las opciones del selector actual
+            selectActual.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+            equiposBase.forEach(equipo => {
+                // Buscamos si el equipo ya fue tomado en OTRO selector diferente a este
+                const yaSeleccionadoEnOtro = valoresSeleccionados.some((val, indexVal) => val === equipo && indexVal !== indexActual);
+
+                // Si no ha sido tomado en otro lado, lo agregamos como opción válida
+                if (!yaSeleccionadoEnOtro) {
+                    const option = document.createElement('option');
+                    option.value = equipo;
+                    option.text = equipo;
+                    if (equipo === valorGuardado) option.selected = true; // Mantenemos la selección activa
+                    selectActual.appendChild(option);
+                }
+            });
+        });
+    }
+
+    // Escuchamos cuando cambia el grupo principal
     selectorGrupo.addEventListener('change', function() {
         const grupoSeleccionado = this.value;
 
@@ -135,22 +164,23 @@
             return;
         }
 
-        const equipos = equiposPorGrupo[grupoSeleccionado];
-
+        // Activamos los selectores vacíos y cargamos los equipos del grupo por primera vez
         selectoresPuestos.forEach(select => {
             select.disabled = false;
-            let opcionesHTML = '<option value="">-- Seleccionar --</option>';
-            equipos.forEach(equipo => {
-                opcionesHTML += `<option value="${equipo}">${equipo}</option>`;
-            });
-            select.innerHTML = opcionesHTML;
+            select.value = ""; 
         });
+        
+        actualizarSelectores();
     });
 
-    // URL de tu Google Apps Script (Tu cuenta de Gmail Personal)
+    // Escuchamos los cambios en cualquiera de los 4 puestos para recalcular los disponibles
+    selectoresPuestos.forEach(select => {
+        select.addEventListener('change', actualizarSelectores);
+    });
+
+    // 4. Envío de Datos a Google Sheets (Mismo sistema JSONP que ya te funciona)
     const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
 
-    // 4. Envío de datos a Google Sheets
     document.getElementById('formPronostico').addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -162,16 +192,6 @@
         const p2 = document.getElementById('puesto2').value;
         const p3 = document.getElementById('puesto3').value;
         const p4 = document.getElementById('puesto4').value;
-
-        // Validar duplicados
-        const selecciones = [p1, p2, p3, p4];
-        const repetidos = selecciones.filter((item, index) => selecciones.indexOf(item) !== index);
-        if (repetidos.length > 0) {
-            statusDiv.style.backgroundColor = "#f8d7da";
-            statusDiv.style.color = "#721c24";
-            statusDiv.innerText = "Error: No puedes repetir el mismo país en diferentes puestos.";
-            return;
-        }
 
         boton.disabled = true;
         statusDiv.style.backgroundColor = "#e2e3e5";
@@ -212,7 +232,7 @@
             boton.disabled = false;
             if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
         };
-        
+
         document.body.appendChild(script);
     });
 </script>
