@@ -64,61 +64,62 @@
 // URL de tu Google Apps Script
     const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
         document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const nombreUsuario = document.getElementById('nombre').value.trim();
-        const boton = document.getElementById('btnIngresar');
-        const statusDiv = document.getElementById('status');
+    e.preventDefault();
+    
+    const nombreUsuario = document.getElementById('nombre').value.trim();
+    const boton = document.getElementById('btnIngresar');
+    const statusDiv = document.getElementById('status');
 
-        if (!nombreUsuario) {
+    if (!nombreUsuario) {
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "Por favor, ingresa un nombre.";
+        return;
+    }
+
+    boton.disabled = true;
+    statusDiv.style.color = "black";
+    statusDiv.innerText = "Verificando usuario...";
+
+    // 1. Creamos la función global que recibirá la respuesta de Google de forma segura
+    window.procesarRespuestaGoogle = function(data) {
+        if (data.encontrado) {
+            statusDiv.style.color = "green";
+            statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
+            
+            localStorage.setItem('usuarioParticipante', nombreUsuario);
+            
+            setTimeout(() => {
+                window.location.href = "pronostico.html"; 
+            }, 1200);
+        } else {
             statusDiv.style.color = "red";
-            statusDiv.innerText = "Por favor, ingresa un nombre.";
-            return;
-        }
-
-        boton.disabled = true;
-        statusDiv.style.color = "black";
-        statusDiv.innerText = "Verificando usuario...";
-
-        const urlConParametro = `${URL_API}?Nombre=${encodeURIComponent(nombreUsuario)}`;
-
-        fetch(urlConParametro, {
-            method: 'GET',
-            mode: 'cors',
-            redirect: 'follow', 
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8' 
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error en la respuesta de la red');
-            }
-            return response.json(); 
-        })
-        .then(data => {
-            if (data.encontrado) {
-                statusDiv.style.color = "green";
-                statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
-                
-                localStorage.setItem('usuarioParticipante', nombreUsuario);
-                
-                setTimeout(() => {
-                    window.location.href = "pronostico.html"; 
-                }, 1200);
-            } else {
-                statusDiv.style.color = "red";
-                statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
-                boton.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error de conexión detallado:', error);
-            statusDiv.style.color = "red";
-            statusDiv.innerText = "Error de conexión con el servidor de Google.";
+            statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
             boton.disabled = false;
-        });
-    });
+        }
+        
+        // Limpieza: Removemos el script inyectado para mantener limpio el HTML
+        const scriptViejo = document.getElementById('jsonpScript');
+        if (scriptViejo) scriptViejo.remove();
+    };
+
+    // 2. Inyectamos dinámicamente un elemento <script> para saltar CORS por completo
+    const script = document.createElement('script');
+    script.id = 'jsonpScript';
+    // Pasamos el parámetro &callback con el nombre de nuestra función de arriba
+    script.src = `${URL_API}?Nombre=${encodeURIComponent(nombreUsuario)}&callback=procesarRespuestaGoogle`;
+    
+    // Captura de errores si el servidor de Google está caído o la URL está mal escrita
+    script.onerror = function() {
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "Error de comunicación con el servidor de Google.";
+        boton.disabled = false;
+        const scriptViejo = document.getElementById('jsonpScript');
+        if (scriptViejo) scriptViejo.remove();
+    };
+
+    // Añadimos el script al documento para que se ejecute la consulta
+    document.body.appendChild(script);
+});
     </script>
 
 </body>
