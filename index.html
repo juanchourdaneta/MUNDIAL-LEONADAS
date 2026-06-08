@@ -83,45 +83,42 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 
     const urlConParametro = `${URL_API}?Nombre=${encodeURIComponent(nombreUsuario)}`;
 
-    // Cambiamos la estrategia de la petición para evitar bloqueos de CORS
-    fetch(urlConParametro, {
-        method: 'GET',
-        mode: 'cors', // Forzamos el modo cors
-        headers: {
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error en la respuesta de la red');
-        }
-        return response.text(); // Leemos como texto primero para evitar errores de parseo
-    })
-    .then(texto => {
-        const data = JSON.parse(texto); // Convertimos el texto a JSON manualmente
+// Forzamos el modo 'cors' pero le indicamos explícitamente que siga las redirecciones de Google
+fetch(urlConParametro, {
+    method: 'GET',
+    mode: 'cors',
+    redirect: 'follow', // <-- CRUCIAL: Esto le permite al navegador seguir el puente de Google
+    headers: {
+        'Content-Type': 'text/plain;charset=utf-8' // Evita que se dispare el preflight de CORS
+    }
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Error en la respuesta de la red');
+    }
+    return response.json(); // Ahora sí podemos leerlo como JSON directo
+})
+.then(data => {
+    if (data.encontrado) {
+        statusDiv.style.color = "green";
+        statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
         
-        if (data.encontrado) {
-            statusDiv.style.color = "green";
-            statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
-            
-            localStorage.setItem('usuarioParticipante', nombreUsuario);
-            
-            setTimeout(() => {
-                window.location.href = "pronostico.html"; 
-            }, 1200);
-        } else {
-            statusDiv.style.color = "red";
-            statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
-            boton.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error de conexión detallado:', error);
+        localStorage.setItem('usuarioParticipante', nombreUsuario);
+        
+        setTimeout(() => {
+            window.location.href = "pronostico.html"; 
+        }, 1200);
+    } else {
         statusDiv.style.color = "red";
-        statusDiv.innerText = "Error de conexión con el servidor de Google.";
+        statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
         boton.disabled = false;
-    });
-});
+    }
+})
+.catch(error => {
+    console.error('Error de conexión detallado:', error);
+    statusDiv.style.color = "red";
+    statusDiv.innerText = "Error de conexión con el servidor de Google.";
+    boton.disabled = false;
 });
     </script>
 
