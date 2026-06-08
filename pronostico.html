@@ -33,8 +33,8 @@
     <form id="formPronostico">
         <div class="form-group">
             <label for="grupo">Selecciona el Grupo:</label>
-            <select id="grupo" required>
-                <option value="">-- Seleccionar Grupo --</option>
+            <select id="grupo" required disabled>
+                <option value="">-- Consultando tus grupos... --</option>
                 <option value="Grupo A">Grupo A</option>
                 <option value="Grupo B">Grupo B</option>
                 <option value="Grupo C">Grupo C</option>
@@ -78,7 +78,7 @@
             </select>
         </div>
 
-        <button type="submit" id="btnGuardar">Guardar</button>
+        <button type="submit" id="btnGuardar" disabled>Guardar</button>
     </form>
 
     <div id="status"></div>
@@ -115,47 +115,87 @@
     };
 
     const selectorGrupo = document.getElementById('grupo');
-    // Seleccionamos los 4 desplegables usando su clase común
     const selectoresPuestos = document.querySelectorAll('.puesto-select');
+    const statusDiv = document.getElementById('status');
+    const botonGuardar = document.getElementById('btnGuardar');
 
-    // 3. ACTUALIZACIÓN AUTOMÁTICA Y FILTRADO DE DUPLICADOS
-    
-    // Función encargada de renderizar las opciones permitidas en cada selector
+    // URL de tu Google Apps Script (Tu cuenta de Gmail Personal)
+    const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+
+    // 3. CONSULTA DE GRUPOS DISPONIBLES AL CARGAR LA PÁGINA
+    function consultarGruposDiligenciados() {
+        selectorGrupo.disabled = true;
+        selectorGrupo.options[0].text = "-- Consultando tus grupos... --";
+
+        window.recibirGruposUsuario = function(res) {
+            if (res.status === "success") {
+                const gruposCompletados = res.grupos; // Lista que viene de Google
+
+                // Recorremos las opciones del selector de grupos de atrás hacia adelante
+                for (let i = selectorGrupo.options.length - 1; i >= 1; i--) {
+                    const opcionValue = selectorGrupo.options[i].value;
+                    
+                    // Si el grupo ya fue guardado por este usuario, lo eliminamos del menú
+                    if (gruposCompletados.includes(opcionValue)) {
+                        selectorGrupo.remove(i);
+                    }
+                }
+
+                // Si ya completó los 12 grupos
+                if (selectorGrupo.options.length === 1) {
+                    selectorGrupo.options[0].text = "¡Ya completaste todos los grupos! 🎉";
+                    statusDiv.style.backgroundColor = "#d4edda";
+                    statusDiv.style.color = "#155724";
+                    statusDiv.innerText = "Muchas gracias. Ya has enviado tus 12 pronósticos con éxito.";
+                } else {
+                    selectorGrupo.options[0].text = "-- Seleccionar Grupo --";
+                    selectorGrupo.disabled = false;
+                    botonGuardar.disabled = false;
+                }
+            } else {
+                selectorGrupo.options[0].text = "-- Error al cargar grupos --";
+                alert("No se pudieron validar tus grupos previos: " + res.message);
+            }
+            document.getElementById('jsonpScriptCheck').remove();
+        };
+
+        const queryParams = `?Accion=verificar_grupos&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=recibirGruposUsuario`;
+        const script = document.createElement('script');
+        script.id = 'jsonpScriptCheck';
+        script.src = URL_API + queryParams;
+        document.body.appendChild(script);
+    }
+
+    // Ejecutamos la consulta inmediatamente al entrar a la página
+    consultarGruposDiligenciados();
+
+    // 4. Lógica de Descarte de países en selectores (La que ya tenías)
     function actualizarSelectores() {
         const grupoSeleccionado = selectorGrupo.value;
         if (!grupoSeleccionado) return;
 
         const equiposBase = equiposPorGrupo[grupoSeleccionado];
-
-        // Mapeamos qué valores están seleccionados actualmente en el formulario
         const valoresSeleccionados = Array.from(selectoresPuestos).map(select => select.value);
 
         selectoresPuestos.forEach((selectActual, indexActual) => {
-            const valorGuardado = selectActual.value; // Respaldamos lo que el usuario ya eligió
-
-            // Reiniciamos las opciones del selector actual
+            const valorGuardado = selectActual.value;
             selectActual.innerHTML = '<option value="">-- Seleccionar --</option>';
 
             equiposBase.forEach(equipo => {
-                // Buscamos si el equipo ya fue tomado en OTRO selector diferente a este
                 const yaSeleccionadoEnOtro = valoresSeleccionados.some((val, indexVal) => val === equipo && indexVal !== indexActual);
-
-                // Si no ha sido tomado en otro lado, lo agregamos como opción válida
                 if (!yaSeleccionadoEnOtro) {
                     const option = document.createElement('option');
                     option.value = equipo;
                     option.text = equipo;
-                    if (equipo === valorGuardado) option.selected = true; // Mantenemos la selección activa
+                    if (equipo === valorGuardado) option.selected = true;
                     selectActual.appendChild(option);
                 }
             });
         });
     }
 
-    // Escuchamos cuando cambia el grupo principal
     selectorGrupo.addEventListener('change', function() {
         const grupoSeleccionado = this.value;
-
         if (!grupoSeleccionado) {
             selectoresPuestos.forEach(select => {
                 select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>';
@@ -163,30 +203,19 @@
             });
             return;
         }
-
-        // Activamos los selectores vacíos y cargamos los equipos del grupo por primera vez
-        selectoresPuestos.forEach(select => {
-            select.disabled = false;
-            select.value = ""; 
-        });
-        
+        selectoresPuestos.forEach(select => { select.disabled = false; select.value = ""; });
         actualizarSelectores();
     });
 
-    // Escuchamos los cambios en cualquiera de los 4 puestos para recalcular los disponibles
     selectoresPuestos.forEach(select => {
         select.addEventListener('change', actualizarSelectores);
     });
 
-    // 4. Envío de Datos a Google Sheets (Mismo sistema JSONP que ya te funciona)
-    const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
-
+    // 5. Envío del Formulario
     document.getElementById('formPronostico').addEventListener('submit', function(e) {
         e.preventDefault();
 
         const boton = document.getElementById('btnGuardar');
-        const statusDiv = document.getElementById('status');
-
         const g = selectorGrupo.value;
         const p1 = document.getElementById('puesto1').value;
         const p2 = document.getElementById('puesto2').value;
@@ -209,13 +238,15 @@
                     select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>';
                     select.disabled = true;
                 });
-                document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
+                
+                // Volvemos a consultar a la base de datos para que borre el grupo recién diligenciado de la lista
+                consultarGruposDiligenciados();
             } else {
                 statusDiv.style.backgroundColor = "#f8d7da";
                 statusDiv.style.color = "#721c24";
                 statusDiv.innerText = "Error de Google: " + res.message;
+                boton.disabled = false;
             }
-            boton.disabled = false;
             if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
         };
 
@@ -224,15 +255,6 @@
         const script = document.createElement('script');
         script.id = 'jsonpScriptWrite';
         script.src = URL_API + queryParams;
-
-        script.onerror = function() {
-            statusDiv.style.backgroundColor = "#f8d7da";
-            statusDiv.style.color = "#721c24";
-            statusDiv.innerText = "Error de red: No se pudo conectar con el servidor.";
-            boton.disabled = false;
-            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
-        };
-
         document.body.appendChild(script);
     });
 </script>
