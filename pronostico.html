@@ -6,22 +6,29 @@
     <title>Carga de Pronóstico</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 450px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
-        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; }
         h2 { color: #333; margin-top: 0; }
-        .usuario { color: #28a745; font-weight: bold; margin-bottom: 20px; font-size: 1.1rem; }
+        .header-usuario { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .usuario { color: #28a745; font-weight: bold; font-size: 1.1rem; }
+        .btn-cerrar { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+        .btn-cerrar:hover { background-color: #bd2130; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 5px; color: #555; }
         select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
-        button { background-color: #007bff; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        button:disabled { background-color: #ccc; }
-        #status { margin-top: 15px; font-weight: bold; text-align: center; }
+        button[type="submit"] { background-color: #007bff; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button[type="submit"]:disabled { background-color: #ccc; }
+        #status { margin-top: 15px; font-weight: bold; text-align: center; padding: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div class="box">
+    <div class="header-usuario">
+        <div id="holaUsuario" class="usuario">Cargando usuario...</div>
+        <button type="button" class="btn-cerrar" id="btnCerrarSesion">Cerrar Sesión</button>
+    </div>
+    
     <h2>Cargar Pronóstico</h2>
-    <div id="holaUsuario" class="usuario">Cargando usuario...</div>
     
     <form id="formPronostico">
         <div class="form-group">
@@ -94,21 +101,25 @@
 </div>
 
 <script>
-    // 1. SOLUCIÓN AL CONGELAMIENTO: Forzamos un usuario si el login no guardó nada
+    // 1. Manejo y validación del usuario autenticado
     let usuarioLogueado = localStorage.getItem('usuarioParticipante');
     
     if (!usuarioLogueado) {
-        // Si vienes directo sin loguearte, asignamos uno por defecto para que no se rompa el script
         usuarioLogueado = "Participante"; 
         localStorage.setItem('usuarioParticipante', usuarioLogueado);
     }
-    
-    // Mostramos el nombre en pantalla inmediatamente al cargar el documento
     document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
 
-    // URL de tu Google Apps Script (De tu cuenta personal)
+    // Lógica del botón Cerrar Sesión
+    document.getElementById('btnCerrarSesion').addEventListener('click', function() {
+        localStorage.removeItem('usuarioParticipante'); // Borramos el usuario guardado
+        window.location.href = "index.html"; // Regresa al login
+    });
+
+    // 🚨 REVISA ESTA URL: Debe ser la de tu cuenta de correo PERSONAL (@gmail.com)
     const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
 
+    // 2. Evento del Formulario
     document.getElementById('formPronostico').addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -125,40 +136,46 @@
         const selecciones = [p1, p2, p3, p4];
         const repetidos = selecciones.filter((item, index) => selecciones.indexOf(item) !== index);
         if (repetidos.length > 0) {
-            statusDiv.style.color = "red";
+            statusDiv.style.backgroundColor = "#f8d7da";
+            statusDiv.style.color = "#721c24";
             statusDiv.innerText = "Error: No puedes repetir el mismo país en diferentes puestos.";
             return;
         }
 
         boton.disabled = true;
-        statusDiv.style.color = "black";
-        statusDiv.innerText = "Enviando a Google Sheets...";
+        statusDiv.style.backgroundColor = "#e2e3e5";
+        statusDiv.style.color = "#383d41";
+        statusDiv.innerText = "Conectando con Google Sheets...";
 
         // Callback global obligatorio para JSONP
         window.respuestaEscritura = function(res) {
             if (res.status === "success") {
-                statusDiv.style.color = "green";
-                statusDiv.innerText = "¡Pronóstico guardado en la hoja Pronostico!";
+                statusDiv.style.backgroundColor = "#d4edda";
+                statusDiv.style.color = "#155724";
+                statusDiv.innerText = "¡Pronóstico guardado exitosamente!";
                 document.getElementById('formPronostico').reset();
                 document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
             } else {
-                statusDiv.style.color = "red";
-                statusDiv.innerText = "Error reportado por Google: " + res.message;
+                statusDiv.style.backgroundColor = "#f8d7da";
+                statusDiv.style.color = "#721c24";
+                statusDiv.innerText = "Error de Google: " + res.message;
             }
             boton.disabled = false;
             if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
         };
 
-        // Armamos los parámetros con los nombres exactos de tus columnas
+        // Construcción de la URL con los parámetros solicitados
         const queryParams = `?Accion=guardar&grupo=${encodeURIComponent(g)}&primer_puesto=${encodeURIComponent(p1)}&segundo_puesto=${encodeURIComponent(p2)}&tercer_puesto=${encodeURIComponent(p3)}&cuarto_puesto=${encodeURIComponent(p4)}&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=respuestaEscritura`;
 
         const script = document.createElement('script');
         script.id = 'jsonpScriptWrite';
         script.src = URL_API + queryParams;
 
+        // Si la URL está rota o Google no responde, saltará este aviso visual
         script.onerror = function() {
-            statusDiv.style.color = "red";
-            statusDiv.innerText = "Error de red: Google rechazó la conexión.";
+            statusDiv.style.backgroundColor = "#f8d7da";
+            statusDiv.style.color = "#721c24";
+            statusDiv.innerText = "Error crítico: La URL del Script de Google no responde. Revisa tu constante URL_API.";
             boton.disabled = false;
             if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
         };
