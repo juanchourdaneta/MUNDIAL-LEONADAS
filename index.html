@@ -1,0 +1,136 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .mensaje {
+            margin-top: 15px;
+            font-size: 14px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Iniciar Sesión</h2>
+        <form id="loginForm">
+            <input type="text" id="nombre" placeholder="Ingresa tu nombre" required>
+            <button type="submit" id="btnIngresar">Ingresar</button>
+        </form>
+        <div id="status" class="mensaje"></div>
+    </div>
+
+    <script>
+        // URL de tu Google Apps Script (asegúrate de haber actualizado a una "Nueva Versión" tras cambiar a doGet)
+const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Obtenemos el nombre y le quitamos espacios vacíos al inicio o al final (.trim())
+    const nombreUsuario = document.getElementById('nombre').value.trim();
+    const boton = document.getElementById('btnIngresar');
+    const statusDiv = document.getElementById('status');
+
+    // Validación por si el campo está vacío tras el trim
+    if (!nombreUsuario) {
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "Por favor, ingresa un nombre válido.";
+        return;
+    }
+
+    // Bloqueamos el botón y mostramos estado de carga
+    boton.disabled = true;
+    statusDiv.style.color = "black";
+    statusDiv.innerText = "Verificando usuario en la lista de participantes...";
+
+    // Construimos la URL con el parámetro Nombre codificado de forma segura
+    const urlConParametro = `${URL_API}?Nombre=${encodeURIComponent(nombreUsuario)}`;
+
+    // Consultamos si el Nombre existe en la pestaña "Participantes" de Google Sheets
+    fetch(urlConParametro, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        // Si la respuesta de red no es correcta (ej. error 404 o 500 de Google)
+        if (!response.ok) {
+            throw new Error('No se pudo obtener una respuesta correcta del servidor de Google.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Evaluamos la respuesta que genera nuestro Apps Script
+        if (data.encontrado) {
+            statusDiv.style.color = "green";
+            statusDiv.innerText = "¡Usuario correcto! Cargando tus pronósticos...";
+            
+            // Opcional: Guardamos el nombre en la sesión del navegador para usarlo en la siguiente página
+            localStorage.setItem('usuarioParticipante', nombreUsuario);
+            
+            // Redirección automática tras 1.2 segundos para que el usuario alcance a ver el mensaje de éxito
+            setTimeout(() => {
+                window.location.href = "pronostico.html"; 
+            }, 1200);
+
+        } else {
+            // El script buscó pero no encontró coincidencias
+            statusDiv.style.color = "red";
+            statusDiv.innerText = "El nombre no está registrado en la lista de participantes. Verifica mayúsculas o tildes.";
+            boton.disabled = false;
+        }
+    })
+    .catch(error => {
+        // Captura errores de red, de caída de Google o respuestas JSON mal formadas
+        console.error('Error detallado en la conexión:', error);
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "Error de conexión. Revisa tu internet o la configuración del script.";
+        boton.disabled = false;
+    });
+});
+    </script>
+
+</body>
+</html>
