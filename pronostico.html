@@ -3,74 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carga de Pronósticos</title>
+    <title>Carga de Pronóstico</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; background-color: #f4f7f6; }
-        .container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; margin-bottom: 5px; }
-        .bienvenida { font-size: 1.2rem; color: #27ae60; font-weight: bold; margin-bottom: 25px; }
-        .grupo-box { border: 1px solid #e0e0e0; padding: 15px; border-radius: 6px; margin-bottom: 20px; background-color: #fafafa; }
-        .grupo-title { font-weight: bold; color: #2980b9; border-bottom: 2px solid #2980b9; padding-bottom: 5px; margin-bottom: 15px; }
-        .form-row { display: flex; gap: 15px; margin-bottom: 10px; }
-        .form-group { flex: 1; display: flex; flex-direction: column; }
-        label { font-size: 0.9rem; margin-bottom: 5px; color: #555; }
-        select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; background-color: white; }
-        button { background-color: #27ae60; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; font-size: 1.1rem; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        button:disabled { background-color: #bdc3c7; }
+        body { font-family: Arial, sans-serif; max-width: 450px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
+        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-top: 0; }
+        .usuario { color: #28a745; font-weight: bold; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; size: 0.9rem; color: #555; }
+        select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
+        button { background-color: #007bff; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:disabled { background-color: #ccc; }
         #status { margin-top: 15px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Mis Pronósticos</h1>
-    <div id="saludoUsuario" class="bienvenida">Cargando usuario...</div>
+<div class="box">
+    <h2>Cargar Pronóstico</h2>
+    <div id="holaUsuario" class="usuario">Cargando usuario...</div>
     
-    <form id="pronosticoForm">
-        
-        <div class="grupo-box">
-            <div class="grupo-title">GRUPO A</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Primer Puesto:</label>
-                    <select id="grupoA_1" required>
-                        <option value="">-- Seleccionar --</option>
-                        <option value="Brasil">Brasil</option>
-                        <option value="México">México</option>
-                        <option value="Ecuador">Ecuador</option>
-                        <option value="Jamaica">Jamaica</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Segundo Puesto:</label>
-                    <select id="grupoA_2" required>
-                        <option value="">-- Seleccionar --</option>
-                        <option value="Brasil">Brasil</option>
-                        <option value="México">México</option>
-                        <option value="Ecuador">Ecuador</option>
-                        <option value="Jamaica">Jamaica</option>
-                    </select>
-                </div>
-            </div>
+    <form id="formPronostico">
+        <div class="form-group">
+            <label for="grupo">Selecciona el Grupo:</label>
+            <select id="grupo" required>
+                <option value="">-- Seleccionar Grupo --</option>
+                <option value="Grupo A">Grupo A</option>
+                <option value="Grupo B">Grupo B</option>
+                <option value="Grupo C">Grupo C</option>
+                <option value="Grupo D">Grupo D</option>
+                <option value="Grupo E">Grupo E</option>
+                <option value="Grupo F">Grupo F</option>
+                <option value="Grupo G">Grupo G</option>
+                <option value="Grupo H">Grupo H</option>
+                <option value="Grupo I">Grupo I</option>
+                <option value="Grupo J">Grupo J</option>
+                <option value="Grupo K">Grupo K</option>
+                <option value="Grupo L">Grupo L</option>
+            </select>
         </div>
 
-        <div class="grupo-box">
-            <div class="grupo-title">GRUPO B</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Primer Puesto:</label>
-                    <select id="grupoB_1" required>
-                        <option value="">-- Seleccionar --</option>
-                        <option value="Argentina">Argentina</option>
-                        <option value="Canadá">Canadá</option>
-                        <option value="Chile">Chile</option>
-                        <option value="Perú">Perú</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Segundo Puesto:</label>
-                    <select id="grupoB_2" required>
-                        <option value="">-- Seleccionar --</option>
-                        <option value="Argentina">Argentina</option>
-                        <option value="Canadá">Canadá</option>
-                        <option value="Chile">
+        <div class="form-group">
+            <label for="puesto1">Primer Puesto:</label>
+            <select id="puesto1" required>
+                <option value="">-- Seleccionar --</option>
+                <option value="Brasil">Brasil</option>
+                <option value="Marruecos">Marruecos</option>
+                <option value="México">México</option>
+                <option value="Ecuador">Ecuador</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="puesto2">Segundo Puesto:</label>
+            <select id="puesto2" required>
+                <option value="">-- Seleccionar --</option>
+                <option value="Brasil">Brasil</option>
+                <option value="Marruecos">Marruecos</option>
+                <option value="México">México</option>
+                <option value="Ecuador">Ecuador</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="puesto3">Tercer Puesto:</label>
+            <select id="puesto3" required>
+                <option value="">-- Seleccionar --</option>
+                <option value="Brasil">Brasil</option>
+                <option value="Marruecos">Marruecos</option>
+                <option value="México">México</option>
+                <option value="Ecuador">Ecuador</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="puesto4">Cuarto Puesto:</label>
+            <select id="puesto4" required>
+                <option value="">-- Seleccionar --</option>
+                <option value="Brasil">Brasil</option>
+                <option value="Marruecos">Marruecos</option>
+                <option value="México">México</option>
+                <option value="Ecuador">Ecuador</option>
+            </select>
+        </div>
+
+        <button type="submit" id="btnGuardar">Guardar</button>
+    </form>
+
+    <div id="status"></div>
+</div>
+
+<script>
+    // Recuperamos el usuario autenticado en el login
+    const usuarioLogueado = localStorage.getItem('usuarioParticipante');
+    
+    if (!usuarioLogueado) {
+        alert("Sesión no válida. Por favor, inicia sesión.");
+        window.location.href = "index.html";
+    } else {
+        document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
+    }
+
+    // URL de tu Google Apps Script (Cuenta Personal)
+    const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
+
+    document.getElementById('formPronostico').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const boton = document.getElementById('btnGuardar');
+        const statusDiv = document.getElementById('status');
+
+        const g = document.getElementById('grupo').value;
+        const p1 = document.getElementById('puesto1').value;
+        const p2 = document.getElementById('puesto2').value;
+        const p3 = document.getElementById('puesto3').value;
+        const p4 = document.getElementById('puesto4').value;
+
+        // Validación para evitar que repitan el mismo país en diferentes puestos
+        const selecciones = [p1, p2, p3, p4];
+        const repetidos = selecciones.filter((item, index) => selecciones.indexOf(item) !== index);
+        if (repetidos.length > 0) {
+            statusDiv.style.color = "red";
+            status
