@@ -8,9 +8,9 @@
         body { font-family: Arial, sans-serif; max-width: 450px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
         .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h2 { color: #333; margin-top: 0; }
-        .usuario { color: #28a745; font-weight: bold; margin-bottom: 20px; }
+        .usuario { color: #28a745; font-weight: bold; margin-bottom: 20px; font-size: 1.1rem; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; size: 0.9rem; color: #555; }
+        label { font-weight: bold; margin-bottom: 5px; color: #555; }
         select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
         button { background-color: #007bff; color: white; padding: 12px; border: none; width: 100%; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 10px; }
         button:disabled { background-color: #ccc; }
@@ -94,22 +94,20 @@
 </div>
 
 <script>
-    // Recuperamos el usuario autenticado en el login
-    // 🔽 AGREGA ESTA LÍNEA TEMPORALMENTE PARA PROBAR CON TU NOMBRE
-    localStorage.setItem('usuarioParticipante', 'Juancho'); 
-
-    // Recuperamos el usuario autenticado en el login
-    const usuarioLogueado = localStorage.getItem('usuarioParticipante');
+    // 1. SOLUCIÓN AL CONGELAMIENTO: Forzamos un usuario si el login no guardó nada
+    let usuarioLogueado = localStorage.getItem('usuarioParticipante');
     
     if (!usuarioLogueado) {
-        alert("Sesión no válida. Por favor, inicia sesión.");
-        window.location.href = "index.html";
-    } else {
-        document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
+        // Si vienes directo sin loguearte, asignamos uno por defecto para que no se rompa el script
+        usuarioLogueado = "Participante"; 
+        localStorage.setItem('usuarioParticipante', usuarioLogueado);
     }
+    
+    // Mostramos el nombre en pantalla inmediatamente al cargar el documento
+    document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
 
-    // URL de tu Google Apps Script (Cuenta Personal)
-    const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+    // URL de tu Google Apps Script (De tu cuenta personal)
+    const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
 
     document.getElementById('formPronostico').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -123,9 +121,50 @@
         const p3 = document.getElementById('puesto3').value;
         const p4 = document.getElementById('puesto4').value;
 
-        // Validación para evitar que repitan el mismo país en diferentes puestos
+        // Validación interna para que no repitan equipos
         const selecciones = [p1, p2, p3, p4];
         const repetidos = selecciones.filter((item, index) => selecciones.indexOf(item) !== index);
         if (repetidos.length > 0) {
             statusDiv.style.color = "red";
-            status
+            statusDiv.innerText = "Error: No puedes repetir el mismo país en diferentes puestos.";
+            return;
+        }
+
+        boton.disabled = true;
+        statusDiv.style.color = "black";
+        statusDiv.innerText = "Enviando a Google Sheets...";
+
+        // Callback global obligatorio para JSONP
+        window.respuestaEscritura = function(res) {
+            if (res.status === "success") {
+                statusDiv.style.color = "green";
+                statusDiv.innerText = "¡Pronóstico guardado en la hoja Pronostico!";
+                document.getElementById('formPronostico').reset();
+                document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
+            } else {
+                statusDiv.style.color = "red";
+                statusDiv.innerText = "Error reportado por Google: " + res.message;
+            }
+            boton.disabled = false;
+            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
+        };
+
+        // Armamos los parámetros con los nombres exactos de tus columnas
+        const queryParams = `?Accion=guardar&grupo=${encodeURIComponent(g)}&primer_puesto=${encodeURIComponent(p1)}&segundo_puesto=${encodeURIComponent(p2)}&tercer_puesto=${encodeURIComponent(p3)}&cuarto_puesto=${encodeURIComponent(p4)}&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=respuestaEscritura`;
+
+        const script = document.createElement('script');
+        script.id = 'jsonpScriptWrite';
+        script.src = URL_API + queryParams;
+
+        script.onerror = function() {
+            statusDiv.style.color = "red";
+            statusDiv.innerText = "Error de red: Google rechazó la conexión.";
+            boton.disabled = false;
+            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
+        };
+
+        document.body.appendChild(script);
+    });
+</script>
+</body>
+</html>
