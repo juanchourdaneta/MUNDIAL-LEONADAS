@@ -10,11 +10,11 @@
         h2 { color: #333; margin-top: 0; }
         .header-usuario { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .usuario { color: #28a745; font-weight: bold; font-size: 1.1rem; width: 100%; }
-        .contenedor-botones { display: flex; gap: 10px; width: 100%; justify-content: space-between; }
-        .btn-resultados { background-color: #17a2b8; color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; flex: 1; text-align: center; text-decoration: none; }
-        .btn-resultados:hover { background-color: #138496; }
-        .btn-cerrar { background-color: #dc3545; color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; flex: 1; }
-        .btn-cerrar:hover { background-color: #bd2130; }
+        .contenedor-botones { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
+        .btn-nav { color: white; border: none; padding: 8px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; text-align: center; text-decoration: none; min-width: 120px; }
+        .btn-resultados { background-color: #17a2b8; } .btn-resultados:hover { background-color: #138496; }
+        .btn-campeon { background-color: #ffc107; color: #212529; } .btn-campeon:hover { background-color: #e0a800; }
+        .btn-cerrar { background-color: #dc3545; } .btn-cerrar:hover { background-color: #bd2130; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 5px; color: #555; }
         select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
@@ -29,8 +29,9 @@
     <div class="header-usuario">
         <div id="holaUsuario" class="usuario">Cargando usuario...</div>
         <div class="contenedor-botones">
-            <a href="resultados.html" class="btn-resultados">Ver Mis Resultados 📊</a>
-            <button type="button" class="btn-cerrar" id="btnCerrarSesion">Cerrar Sesión</button>
+            <a href="resultados.html" class="btn-nav btn-resultados">Ver Resultados 📊</a>
+            <a href="campeon.html" class="btn-nav btn-campeon">Pronóstico Campeón 🏆</a>
+            <button type="button" class="btn-nav btn-cerrar" id="btnCerrarSesion">Salir</button>
         </div>
     </div>
     
@@ -58,30 +59,19 @@
 
         <div class="form-group">
             <label for="puesto1">Primer Puesto:</label>
-            <select id="puesto1" class="puesto-select" required disabled>
-                <option value="">-- Selecciona un grupo primero --</option>
-            </select>
+            <select id="puesto1" class="puesto-select" required disabled><option value="">-- Selecciona un grupo primero --</option></select>
         </div>
-
         <div class="form-group">
             <label for="puesto2">Segundo Puesto:</label>
-            <select id="puesto2" class="puesto-select" required disabled>
-                <option value="">-- Selecciona un grupo primero --</option>
-            </select>
+            <select id="puesto2" class="puesto-select" required disabled><option value="">-- Selecciona un grupo primero --</option></select>
         </div>
-
         <div class="form-group">
             <label for="puesto3">Tercer Puesto:</label>
-            <select id="puesto3" class="puesto-select" required disabled>
-                <option value="">-- Selecciona un grupo primero --</option>
-            </select>
+            <select id="puesto3" class="puesto-select" required disabled><option value="">-- Selecciona un grupo primero --</option></select>
         </div>
-
         <div class="form-group">
             <label for="puesto4">Cuarto Puesto:</label>
-            <select id="puesto4" class="puesto-select" required disabled>
-                <option value="">-- Selecciona un grupo primero --</option>
-            </select>
+            <select id="puesto4" class="puesto-select" required disabled><option value="">-- Selecciona un grupo primero --</option></select>
         </div>
 
         <button type="submit" id="btnGuardar" disabled>Guardar</button>
@@ -91,16 +81,11 @@
 </div>
 
 <script>
-    let usuarioLogueado = localStorage.getItem('usuarioParticipante');
-    if (!usuarioLogueado || usuarioLogueado.trim() === "") {
-        usuarioLogueado = "Juancho"; 
-        localStorage.setItem('usuarioParticipante', usuarioLogueado);
-    }
+    let usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Juancho";
     document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
 
     document.getElementById('btnCerrarSesion').addEventListener('click', function() {
-        localStorage.removeItem('usuarioParticipante');
-        window.location.href = "index.html";
+        localStorage.removeItem('usuarioParticipante'); window.location.href = "index.html";
     });
 
     const equiposPorGrupo = {
@@ -120,18 +105,10 @@
 
     const opcionesOriginalesGrupos = `
         <option value="">-- Seleccionar Grupo --</option>
-        <option value="Grupo A">Grupo A</option>
-        <option value="Grupo B">Grupo B</option>
-        <option value="Grupo C">Grupo C</option>
-        <option value="Grupo D">Grupo D</option>
-        <option value="Grupo E">Grupo E</option>
-        <option value="Grupo F">Grupo F</option>
-        <option value="Grupo G">Grupo G</option>
-        <option value="Grupo H">Grupo H</option>
-        <option value="Grupo I">Grupo I</option>
-        <option value="Grupo J">Grupo J</option>
-        <option value="Grupo K">Grupo K</option>
-        <option value="Grupo L">Grupo L</option>
+        <option value="Grupo A">Grupo A</option><option value="Grupo B">Grupo B</option><option value="Grupo C">Grupo C</option>
+        <option value="Grupo D">Grupo D</option><option value="Grupo E">Grupo E</option><option value="Grupo F">Grupo F</option>
+        <option value="Grupo G">Grupo G</option><option value="Grupo H">Grupo H</option><option value="Grupo I">Grupo I</option>
+        <option value="Grupo J">Grupo J</option><option value="Grupo K">Grupo K</option><option value="Grupo L">Grupo L</option>
     `;
 
     const selectorGrupo = document.getElementById('grupo');
@@ -139,8 +116,8 @@
     const statusDiv = document.getElementById('status');
     const botonGuardar = document.getElementById('btnGuardar');
 
-    // 🚨 REVISA ESTA URL: Asegúrate de que sea la de tu cuenta de correo PERSONAL (@gmail.com)
-    const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+    // URL de tu API de Google Sheets
+    const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
 
     function consultarGruposDiligenciados() {
         selectorGrupo.disabled = true;
@@ -153,54 +130,41 @@
 
                 for (let i = selectorGrupo.options.length - 1; i >= 1; i--) {
                     const valorOpcion = selectorGrupo.options[i].value.toString().trim().toLowerCase();
-                    if (gruposCompletados.includes(valorOpcion)) {
-                        selectorGrupo.remove(i);
-                    }
+                    if (gruposCompletados.includes(valorOpcion)) { selectorGrupo.remove(i); }
                 }
 
                 if (selectorGrupo.options.length === 1) {
                     selectorGrupo.options[0].text = "¡Completaste todos los grupos! 🎉";
-                    statusDiv.style.backgroundColor = "#d4edda";
-                    statusDiv.style.color = "#155724";
+                    statusDiv.style.backgroundColor = "#d4edda"; statusDiv.style.color = "#155724";
                     statusDiv.innerText = "Ya has registrado los 12 grupos de la quiniela de manera exitosa.";
                     botonGuardar.disabled = true;
                 } else {
                     selectorGrupo.options[0].text = "-- Seleccionar Grupo --";
-                    selectorGrupo.disabled = false;
-                    botonGuardar.disabled = false;
+                    selectorGrupo.disabled = false; botonGuardar.disabled = false;
                 }
-            } else {
-                selectorGrupo.innerHTML = '<option value="">-- Error al sincronizar --</option>';
-            }
+            } else { selectorGrupo.innerHTML = '<option value="">-- Error al sincronizar --</option>'; }
             if (document.getElementById('jsonpScriptCheck')) document.getElementById('jsonpScriptCheck').remove();
         };
 
         const queryParams = `?Accion=verificar_grupos&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=recibirGruposUsuario`;
-        const script = document.createElement('script');
-        script.id = 'jsonpScriptCheck';
-        script.src = URL_API + queryParams;
+        const script = document.createElement('script'); script.id = 'jsonpScriptCheck'; script.src = URL_API + queryParams;
         document.body.appendChild(script);
     }
 
     consultarGruposDiligenciados();
 
     function actualizarSelectores() {
-        const grupoSeleccionado = selectorGrupo.value;
-        if (!grupoSeleccionado) return;
-
+        const grupoSeleccionado = selectorGrupo.value; if (!grupoSeleccionado) return;
         const equiposBase = equiposPorGrupo[grupoSeleccionado];
         const valoresSeleccionados = Array.from(selectoresPuestos).map(select => select.value);
 
         selectoresPuestos.forEach((selectActual, indexActual) => {
             const valorGuardado = selectActual.value;
             selectActual.innerHTML = '<option value="">-- Seleccionar --</option>';
-
             equiposBase.forEach(equipo => {
                 const yaSeleccionadoEnOtro = valoresSeleccionados.some((val, indexVal) => val === equipo && indexVal !== indexActual);
                 if (!yaSeleccionadoEnOtro) {
-                    const option = document.createElement('option');
-                    option.value = equipo;
-                    option.text = equipo;
+                    const option = document.createElement('option'); option.value = equipo; option.text = equipo;
                     if (equipo === valorGuardado) option.selected = true;
                     selectActual.appendChild(option);
                 }
@@ -211,57 +175,35 @@
     selectorGrupo.addEventListener('change', function() {
         const grupoSeleccionado = this.value;
         if (!grupoSeleccionado) {
-            selectoresPuestos.forEach(select => {
-                select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>';
-                select.disabled = true;
-            });
+            selectoresPuestos.forEach(select => { select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>'; select.disabled = true; });
             return;
         }
         selectoresPuestos.forEach(select => { select.disabled = false; select.value = ""; });
         actualizarSelectores();
     });
 
-    selectoresPuestos.forEach(select => {
-        select.addEventListener('change', actualizarSelectores);
-    });
+    selectoresPuestos.forEach(select => { select.addEventListener('change', actualizarSelectores); });
 
     document.getElementById('formPronostico').addEventListener('submit', function(e) {
-        e.preventDefault();
-        botonGuardar.disabled = true;
-        statusDiv.style.backgroundColor = "#e2e3e5";
-        statusDiv.style.color = "#383d41";
-        statusDiv.innerText = "Guardando en Google Sheets...";
+        e.preventDefault(); botonGuardar.disabled = true;
+        statusDiv.style.backgroundColor = "#e2e3e5"; statusDiv.style.color = "#383d41"; statusDiv.innerText = "Guardando en Google Sheets...";
 
         const g = selectorGrupo.value;
-        const p1 = document.getElementById('puesto1').value;
-        const p2 = document.getElementById('puesto2').value;
-        const p3 = document.getElementById('puesto3').value;
-        const p4 = document.getElementById('puesto4').value;
+        const p1 = document.getElementById('puesto1').value; const p2 = document.getElementById('puesto2').value;
+        const p3 = document.getElementById('puesto3').value; const p4 = document.getElementById('puesto4').value;
 
         window.respuestaEscritura = function(res) {
             if (res.status === "success") {
-                statusDiv.style.backgroundColor = "#d4edda";
-                statusDiv.style.color = "#155724";
-                statusDiv.innerText = "¡Pronóstico guardado exitosamente!";
+                statusDiv.style.backgroundColor = "#d4edda"; statusDiv.style.color = "#155724"; statusDiv.innerText = "¡Pronóstico guardado exitosamente!";
                 document.getElementById('formPronostico').reset();
-                selectoresPuestos.forEach(select => {
-                    select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>';
-                    select.disabled = true;
-                });
+                selectoresPuestos.forEach(select => { select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>'; select.disabled = true; });
                 consultarGruposDiligenciados();
-            } else {
-                statusDiv.style.backgroundColor = "#f8d7da";
-                statusDiv.style.color = "#721c24";
-                statusDiv.innerText = "Error de Google: " + res.message;
-                botonGuardar.disabled = false;
-            }
+            } else { statusDiv.style.backgroundColor = "#f8d7da"; statusDiv.style.color = "#721c24"; statusDiv.innerText = "Error de Google: " + res.message; botonGuardar.disabled = false; }
             if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
         };
 
         const queryParams = `?Accion=guardar&grupo=${encodeURIComponent(g)}&primer_puesto=${encodeURIComponent(p1)}&segundo_puesto=${encodeURIComponent(p2)}&tercer_puesto=${encodeURIComponent(p3)}&cuarto_puesto=${encodeURIComponent(p4)}&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=respuestaEscritura`;
-        const script = document.createElement('script');
-        script.id = 'jsonpScriptWrite';
-        script.src = URL_API + queryParams;
+        const script = document.createElement('script'); script.id = 'jsonpScriptWrite'; script.src = URL_API + queryParams;
         document.body.appendChild(script);
     });
 </script>
