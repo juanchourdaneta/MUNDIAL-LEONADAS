@@ -67,68 +67,61 @@ const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVn
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Obtenemos el nombre y le quitamos espacios vacíos al inicio o al final (.trim())
     const nombreUsuario = document.getElementById('nombre').value.trim();
     const boton = document.getElementById('btnIngresar');
     const statusDiv = document.getElementById('status');
 
-    // Validación por si el campo está vacío tras el trim
     if (!nombreUsuario) {
         statusDiv.style.color = "red";
-        statusDiv.innerText = "Por favor, ingresa un nombre válido.";
+        statusDiv.innerText = "Por favor, ingresa un nombre.";
         return;
     }
 
-    // Bloqueamos el botón y mostramos estado de carga
     boton.disabled = true;
     statusDiv.style.color = "black";
-    statusDiv.innerText = "Verificando usuario en la lista de participantes...";
+    statusDiv.innerText = "Verificando usuario...";
 
-    // Construimos la URL con el parámetro Nombre codificado de forma segura
     const urlConParametro = `${URL_API}?Nombre=${encodeURIComponent(nombreUsuario)}`;
 
-    // Consultamos si el Nombre existe en la pestaña "Participantes" de Google Sheets
+    // Cambiamos la estrategia de la petición para evitar bloqueos de CORS
     fetch(urlConParametro, {
         method: 'GET',
+        mode: 'cors', // Forzamos el modo cors
         headers: {
             'Accept': 'application/json'
         }
     })
     .then(response => {
-        // Si la respuesta de red no es correcta (ej. error 404 o 500 de Google)
         if (!response.ok) {
-            throw new Error('No se pudo obtener una respuesta correcta del servidor de Google.');
+            throw new Error('Error en la respuesta de la red');
         }
-        return response.json();
+        return response.text(); // Leemos como texto primero para evitar errores de parseo
     })
-    .then(data => {
-        // Evaluamos la respuesta que genera nuestro Apps Script
+    .then(texto => {
+        const data = JSON.parse(texto); // Convertimos el texto a JSON manualmente
+        
         if (data.encontrado) {
             statusDiv.style.color = "green";
-            statusDiv.innerText = "¡Usuario correcto! Cargando tus pronósticos...";
+            statusDiv.innerText = "¡Usuario correcto! Cargando pronósticos...";
             
-            // Opcional: Guardamos el nombre en la sesión del navegador para usarlo en la siguiente página
             localStorage.setItem('usuarioParticipante', nombreUsuario);
             
-            // Redirección automática tras 1.2 segundos para que el usuario alcance a ver el mensaje de éxito
             setTimeout(() => {
                 window.location.href = "pronostico.html"; 
             }, 1200);
-
         } else {
-            // El script buscó pero no encontró coincidencias
             statusDiv.style.color = "red";
-            statusDiv.innerText = "El nombre no está registrado en la lista de participantes. Verifica mayúsculas o tildes.";
+            statusDiv.innerText = data.error ? `Error: ${data.error}` : "El nombre no está registrado en la lista de participantes.";
             boton.disabled = false;
         }
     })
     .catch(error => {
-        // Captura errores de red, de caída de Google o respuestas JSON mal formadas
-        console.error('Error detallado en la conexión:', error);
+        console.error('Error de conexión detallado:', error);
         statusDiv.style.color = "red";
-        statusDiv.innerText = "Error de conexión. Revisa tu internet o la configuración del script.";
+        statusDiv.innerText = "Error de conexión con el servidor de Google.";
         boton.disabled = false;
     });
+});
 });
     </script>
 
