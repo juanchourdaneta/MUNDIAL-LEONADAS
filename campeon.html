@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pronóstico Campeón</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 450px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
+        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-top: 0; text-align: center; }
+        .usuario { color: #28a745; font-weight: bold; font-size: 1.1rem; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; color: #555; }
+        select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
+        button[type="submit"] { background-color: #ffc107; color: #212529; padding: 12px; border: none; width: 100%; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button[type="submit"]:disabled { background-color: #ccc; color: #666; }
+        .btn-volver { display: block; text-align: center; margin-top: 20px; color: #007bff; font-weight: bold; text-decoration: none; }
+        .btn-volver:hover { text-decoration: underline; }
+        #status { margin-top: 15px; font-weight: bold; text-align: center; padding: 10px; border-radius: 4px; }
+        .resumen-guardado { background-color: #e2e3e5; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #d6d8db; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>🏆 Podio Final del Torneo 🏆</h2>
+    <div id="holaUsuario" class="usuario">Cargando usuario...</div>
+
+    <form id="formCampeon">
+        <div class="form-group">
+            <label for="campeon">🥇 CAMPEÓN:</label>
+            <select id="campeon" class="podio-select" required></select>
+        </div>
+
+        <div class="form-group">
+            <label for="subcampeon">🥈 SUBCAMPEÓN:</label>
+            <select id="subcampeon" class="podio-select" required></select>
+        </div>
+
+        <div class="form-group">
+            <label for="tercer_puesto">🥉 TERCER PUESTO:</label>
+            <select id="tercer_puesto" class="podio-select" required></select>
+        </div>
+
+        <button type="submit" id="btnGuardarCampeon">Guardar Mi Podio</button>
+    </form>
+
+    <div id="status"></div>
+    <div id="bloqueResumen" class="resumen-guardado" style="display:none;"></div>
+
+    <a href="pronostico.html" class="btn-volver">← Volver a Pronósticos por Grupo</a>
+</div>
+
+<script>
+    const usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Juancho";
+    document.getElementById('holaUsuario').innerText = `Participante: ${usuarioLogueado}`;
+
+    // Lista global consolidada de los 48 países participantes
+    const todosLosPaises = [
+        "Alemania", "Arabia Saudí", "Argelia", "Argentina", "Australia", "Austria", "Belgica", "Bosnia", 
+        "Brasil", "Canadá", "Catar", "Chequia", "Colombia", "Costa de Marfil", "Croacia", "Curazao", 
+        "Ecuador", "Egipto", "Escocia", "España", "Estados Unidos", "Francia", "Ghana", "Haití", 
+        "Inglaterra", "Irán", "Irak", "Isla de Cabo Verde", "Japón", "Jordania", "Marruecos", "México", 
+        "Noruega", "Nueva Zelanda", "Países bajos", "Panamá", "Paraguay", "Portugal", "RD Congo", 
+        "República de Corea", "Senegal", "Sudáfrica", "Suecia", "Suiza", "Túnez", "Turquía", "Uruguay", "Uzbekistan"
+    ];
+
+    const selectores = document.querySelectorAll('.podio-select');
+    const statusDiv = document.getElementById('status');
+    const formCampeon = document.getElementById('formCampeon');
+    const btnGuardar = document.getElementById('btnGuardarCampeon');
+    const bloqueResumen = document.getElementById('bloqueResumen');
+
+    // 🚨 REVISA ESTA URL: Coloca tu enlace de Google Apps Script
+    const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+
+    // 1. Inicializar y filtrar descartes de países escogidos
+    function actualizarSelectoresPodio() {
+        const valoresSeleccionados = Array.from(selectores).map(s => s.value);
+
+        selectores.forEach((selectActual, indexActual) => {
+            const valorGuardado = selectActual.value;
+            selectActual.innerHTML = '<option value="">-- Seleccionar País --</option>';
+
+            todosLosPaises.forEach(pais => {
+                const yaSeleccionadoEnOtro = valoresSeleccionados.some((val, indexVal) => val === pais && indexVal !== indexActual);
+                if (!yaSeleccionadoEnOtro) {
+                    const option = document.createElement('option');
+                    option.value = pais; option.text = pais;
+                    if (pais === valorGuardado) option.selected = true;
+                    selectActual.appendChild(option);
+                }
+            });
+        });
+    }
+
+    selectores.forEach(select => {
+        select.addEventListener('change', actualizarSelectoresPodio);
+    });
+
+    // 2. Verificar al cargar la página si el usuario ya registró su campeón
+    function verificarRegistroCampeon() {
+        btnGuardar.disabled = true;
+        statusDiv.innerText = "Comprobando registros...";
+
+        window.verificarC = function(res) {
+            if (res.status === "success" && res.yaRegistro) {
+                formCampeon.style.display = "none";
+                statusDiv.style.backgroundColor = "#d4edda"; statusDiv.style.color = "#155724";
+                statusDiv.innerText = "¡Ya registraste tus campeones con éxito! 🎉";
+                
+                bloqueResumen.style.display = "block";
+                bloqueResumen.innerHTML = `
+                    <h4 style="margin-top:0;text-align:center;">Tu Pronóstico Guardado:</h4>
+                    🏆 <strong>Campeón:</strong> ${res.datos.campeon}<br>
+                    🥈 <strong>Subcampeón:</strong> ${res.datos.subcampeon}<br>
+                    🥉 <strong>Tercer Puesto:</strong> ${res.datos.tercero}
+                `;
+            } else {
+                statusDiv.innerText = "";
+                actualizarSelectoresPodio();
+                btnGuardar.disabled = false;
+            }
+            if (document.getElementById('jsonpCheckC')) document.getElementById('jsonpCheckC').remove();
+        };
+
+        const queryParams = `?Accion=verificar_campeon&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=verificarC`;
+        const script = document.createElement('script'); script.id = 'jsonpCheckC'; script.src = URL_API + queryParams;
+        document.body.appendChild(script);
+    }
+
+    verificarRegistroCampeon();
+
+    // 3. Envío del podio a Google Sheets
+    formCampeon.addEventListener('submit', function(e) {
+        e.preventDefault();
+        btnGuardar.disabled = true;
+        statusDiv.style.backgroundColor = "#e2e3e5"; statusDiv.style.color = "#383d41"; statusDiv.innerText = "Enviando podio a la base de datos...";
+
+        const c = document.getElementById('campeon').value;
+        const s = document.getElementById('subcampeon').value;
+        const t = document.getElementById('tercer_puesto').value;
+
+        window.guardarC = function(res) {
+            if (res.status === "success") {
+                verificarRegistroCampeon();
+            } else {
+                statusDiv.style.backgroundColor = "#f8d7da"; statusDiv.style.color = "#721c24";
+                statusDiv.innerText = "Error: " + res.message;
+                btnGuardar.disabled = false;
+            }
+            if (document.getElementById('jsonpWriteC')) document.getElementById('jsonpWriteC').remove();
+        };
+
+        const queryParams = `?Accion=guardar_campeon&campeon=${encodeURIComponent(c)}&subcampeon=${encodeURIComponent(s)}&tercer_puesto=${encodeURIComponent(t)}&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=guardarC`;
+        const script = document.createElement('script'); script.id = 'jsonpWriteC'; script.src = URL_API + queryParams;
+        document.body.appendChild(script);
+    });
+</script>
+</body>
+</html>
