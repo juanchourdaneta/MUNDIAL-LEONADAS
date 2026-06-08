@@ -85,7 +85,21 @@
 </div>
 
 <script>
-    // 1. Datos de los equipos organizados por grupo sacados de tu lista
+    // 1. Control y Respaldo de Sesión de Usuario (Evita congelamiento)
+    let usuarioLogueado = localStorage.getItem('usuarioParticipante');
+    if (!usuarioLogueado || usuarioLogueado.trim() === "") {
+        usuarioLogueado = "Juancho"; // Nombre de respaldo si el login falla
+        localStorage.setItem('usuarioParticipante', usuarioLogueado);
+    }
+    document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
+
+    // Botón Cerrar Sesión
+    document.getElementById('btnCerrarSesion').addEventListener('click', function() {
+        localStorage.removeItem('usuarioParticipante');
+        window.location.href = "index.html";
+    });
+
+    // 2. Datos limpios en una sola línea sin saltos de texto ocultos
     const equiposPorGrupo = {
         "Grupo A": ["México", "Sudáfrica", "República de Corea", "Chequia"],
         "Grupo B": ["Canadá", "Bosnia", "Catar", "Suiza"],
@@ -101,20 +115,7 @@
         "Grupo L": ["Inglaterra", "Croacia", "Ghana", "Panamá"]
     };
 
-    // 2. Control de Sesión de Usuario
-    let usuarioLogueado = localStorage.getItem('usuarioParticipante');
-    if (!usuarioLogueado) {
-        usuarioLogueado = "Participante"; 
-        localStorage.setItem('usuarioParticipante', usuarioLogueado);
-    }
-    document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
-
-    document.getElementById('btnCerrarSesion').addEventListener('click', function() {
-        localStorage.removeItem('usuarioParticipante');
-        window.location.href = "index.html";
-    });
-
-    // 🚨 LÓGICA COMODÍN: Detectar cambio de grupo y cambiar los selectores de puestos
+    // 3. Lógica para cambiar los países dinámicamente
     const selectorGrupo = document.getElementById('grupo');
     const selectoresPuestos = [
         document.getElementById('puesto1'),
@@ -127,5 +128,93 @@
         const grupoSeleccionado = this.value;
 
         if (!grupoSeleccionado) {
-            // Si eligen la opción vacía, deshabilitamos los puestos
-            selectoresPuestos.forEach(select
+            selectoresPuestos.forEach(select => {
+                select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>';
+                select.disabled = true;
+            });
+            return;
+        }
+
+        const equipos = equiposPorGrupo[grupoSeleccionado];
+
+        selectoresPuestos.forEach(select => {
+            select.disabled = false;
+            let opcionesHTML = '<option value="">-- Seleccionar --</option>';
+            equipos.forEach(equipo => {
+                opcionesHTML += `<option value="${equipo}">${equipo}</option>`;
+            });
+            select.innerHTML = opcionesHTML;
+        });
+    });
+
+    // URL de tu Google Apps Script (Tu cuenta de Gmail Personal)
+    const URL_API = "https://script.google.com/macros/s/AKfycbz1avHkTr7-DO74A0bVlQVnGfWQmLTsUj11vFfQ2bdk5P9CABlHSihDsXFJxOnpFXQ0oQ/exec";
+
+    // 4. Envío de datos a Google Sheets
+    document.getElementById('formPronostico').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const boton = document.getElementById('btnGuardar');
+        const statusDiv = document.getElementById('status');
+
+        const g = selectorGrupo.value;
+        const p1 = document.getElementById('puesto1').value;
+        const p2 = document.getElementById('puesto2').value;
+        const p3 = document.getElementById('puesto3').value;
+        const p4 = document.getElementById('puesto4').value;
+
+        // Validar duplicados
+        const selecciones = [p1, p2, p3, p4];
+        const repetidos = selecciones.filter((item, index) => selecciones.indexOf(item) !== index);
+        if (repetidos.length > 0) {
+            statusDiv.style.backgroundColor = "#f8d7da";
+            statusDiv.style.color = "#721c24";
+            statusDiv.innerText = "Error: No puedes repetir el mismo país en diferentes puestos.";
+            return;
+        }
+
+        boton.disabled = true;
+        statusDiv.style.backgroundColor = "#e2e3e5";
+        statusDiv.style.color = "#383d41";
+        statusDiv.innerText = "Guardando en Google Sheets...";
+
+        window.respuestaEscritura = function(res) {
+            if (res.status === "success") {
+                statusDiv.style.backgroundColor = "#d4edda";
+                statusDiv.style.color = "#155724";
+                statusDiv.innerText = "¡Pronóstico guardado exitosamente!";
+                document.getElementById('formPronostico').reset();
+                
+                selectoresPuestos.forEach(select => {
+                    select.innerHTML = '<option value="">-- Selecciona un grupo primero --</option>';
+                    select.disabled = true;
+                });
+                document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
+            } else {
+                statusDiv.style.backgroundColor = "#f8d7da";
+                statusDiv.style.color = "#721c24";
+                statusDiv.innerText = "Error de Google: " + res.message;
+            }
+            boton.disabled = false;
+            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
+        };
+
+        const queryParams = `?Accion=guardar&grupo=${encodeURIComponent(g)}&primer_puesto=${encodeURIComponent(p1)}&segundo_puesto=${encodeURIComponent(p2)}&tercer_puesto=${encodeURIComponent(p3)}&cuarto_puesto=${encodeURIComponent(p4)}&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=respuestaEscritura`;
+
+        const script = document.createElement('script');
+        script.id = 'jsonpScriptWrite';
+        script.src = URL_API + queryParams;
+
+        script.onerror = function() {
+            statusDiv.style.backgroundColor = "#f8d7da";
+            statusDiv.style.color = "#721c24";
+            statusDiv.innerText = "Error de red: No se pudo conectar con el servidor.";
+            boton.disabled = false;
+            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
+        };
+
+        document.body.appendChild(script);
+    });
+</script>
+</body>
+</html>
