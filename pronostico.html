@@ -6,7 +6,7 @@
     <title>Carga de Pronóstico</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 450px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
-        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; }
+        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h2 { color: #333; margin-top: 0; }
         .header-usuario { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .usuario { color: #28a745; font-weight: bold; font-size: 1.1rem; }
@@ -52,45 +52,29 @@
 
         <div class="form-group">
             <label for="puesto1">Primer Puesto:</label>
-            <select id="puesto1" required>
-                <option value="">-- Seleccionar --</option>
-                <option value="Brasil">Brasil</option>
-                <option value="Marruecos">Marruecos</option>
-                <option value="México">México</option>
-                <option value="Ecuador">Ecuador</option>
+            <select id="puesto1" required disabled>
+                <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="puesto2">Segundo Puesto:</label>
-            <select id="puesto2" required>
-                <option value="">-- Seleccionar --</option>
-                <option value="Brasil">Brasil</option>
-                <option value="Marruecos">Marruecos</option>
-                <option value="México">México</option>
-                <option value="Ecuador">Ecuador</option>
+            <select id="puesto2" required disabled>
+                <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="puesto3">Tercer Puesto:</label>
-            <select id="puesto3" required>
-                <option value="">-- Seleccionar --</option>
-                <option value="Brasil">Brasil</option>
-                <option value="Marruecos">Marruecos</option>
-                <option value="México">México</option>
-                <option value="Ecuador">Ecuador</option>
+            <select id="puesto3" required disabled>
+                <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="puesto4">Cuarto Puesto:</label>
-            <select id="puesto4" required>
-                <option value="">-- Seleccionar --</option>
-                <option value="Brasil">Brasil</option>
-                <option value="Marruecos">Marruecos</option>
-                <option value="México">México</option>
-                <option value="Ecuador">Ecuador</option>
+            <select id="puesto4" required disabled>
+                <option value="">-- Selecciona un grupo primero --</option>
             </select>
         </div>
 
@@ -101,87 +85,47 @@
 </div>
 
 <script>
-    // 1. Manejo y validación del usuario autenticado
+    // 1. Datos de los equipos organizados por grupo sacados de tu lista
+    const equiposPorGrupo = {
+        "Grupo A": ["México", "Sudáfrica", "República de Corea", "Chequia"],
+        "Grupo B": ["Canadá", "Bosnia", "Catar", "Suiza"],
+        "Grupo C": ["Brasil", "Marruecos", "Haití", "Escocia"],
+        "Grupo D": ["Estados Unidos", "Paraguay", "Australia", "Turquía"],
+        "Grupo E": ["Alemania", "Curazao", "Costa de Marfil", "Ecuador"],
+        "Grupo F": ["Países bajos", "Japón", "Suecia", "Túnez"],
+        "Grupo G": ["Belgica", "Egipto", "Irán", "Nueva Zelanda"],
+        "Grupo H": ["España", "Isla de Cabo Verde", "Arabia Saudí", "Uruguay"],
+        "Grupo I": ["Francia", "Senegal", "Irak", "Noruega"],
+        "Grupo J": ["Argentina", "Argelia", "Austria", "Jordania"],
+        "Grupo K": ["Portugal", "RD Congo", "Colombia", "Uzbekistan"],
+        "Grupo L": ["Inglaterra", "Croacia", "Ghana", "Panamá"]
+    };
+
+    // 2. Control de Sesión de Usuario
     let usuarioLogueado = localStorage.getItem('usuarioParticipante');
-    
     if (!usuarioLogueado) {
         usuarioLogueado = "Participante"; 
         localStorage.setItem('usuarioParticipante', usuarioLogueado);
     }
     document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
 
-    // Lógica del botón Cerrar Sesión
     document.getElementById('btnCerrarSesion').addEventListener('click', function() {
-        localStorage.removeItem('usuarioParticipante'); // Borramos el usuario guardado
-        window.location.href = "index.html"; // Regresa al login
+        localStorage.removeItem('usuarioParticipante');
+        window.location.href = "index.html";
     });
 
-    // 🚨 REVISA ESTA URL: Debe ser la de tu cuenta de correo PERSONAL (@gmail.com)
-    const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+    // 🚨 LÓGICA COMODÍN: Detectar cambio de grupo y cambiar los selectores de puestos
+    const selectorGrupo = document.getElementById('grupo');
+    const selectoresPuestos = [
+        document.getElementById('puesto1'),
+        document.getElementById('puesto2'),
+        document.getElementById('puesto3'),
+        document.getElementById('puesto4')
+    ];
 
-    // 2. Evento del Formulario
-    document.getElementById('formPronostico').addEventListener('submit', function(e) {
-        e.preventDefault();
+    selectorGrupo.addEventListener('change', function() {
+        const grupoSeleccionado = this.value;
 
-        const boton = document.getElementById('btnGuardar');
-        const statusDiv = document.getElementById('status');
-
-        const g = document.getElementById('grupo').value;
-        const p1 = document.getElementById('puesto1').value;
-        const p2 = document.getElementById('puesto2').value;
-        const p3 = document.getElementById('puesto3').value;
-        const p4 = document.getElementById('puesto4').value;
-
-        // Validación interna para que no repitan equipos
-        const selecciones = [p1, p2, p3, p4];
-        const repetidos = selecciones.filter((item, index) => selecciones.indexOf(item) !== index);
-        if (repetidos.length > 0) {
-            statusDiv.style.backgroundColor = "#f8d7da";
-            statusDiv.style.color = "#721c24";
-            statusDiv.innerText = "Error: No puedes repetir el mismo país en diferentes puestos.";
-            return;
-        }
-
-        boton.disabled = true;
-        statusDiv.style.backgroundColor = "#e2e3e5";
-        statusDiv.style.color = "#383d41";
-        statusDiv.innerText = "Conectando con Google Sheets...";
-
-        // Callback global obligatorio para JSONP
-        window.respuestaEscritura = function(res) {
-            if (res.status === "success") {
-                statusDiv.style.backgroundColor = "#d4edda";
-                statusDiv.style.color = "#155724";
-                statusDiv.innerText = "¡Pronóstico guardado exitosamente!";
-                document.getElementById('formPronostico').reset();
-                document.getElementById('holaUsuario').innerText = `Hola, ${usuarioLogueado} 👋`;
-            } else {
-                statusDiv.style.backgroundColor = "#f8d7da";
-                statusDiv.style.color = "#721c24";
-                statusDiv.innerText = "Error de Google: " + res.message;
-            }
-            boton.disabled = false;
-            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
-        };
-
-        // Construcción de la URL con los parámetros solicitados
-        const queryParams = `?Accion=guardar&grupo=${encodeURIComponent(g)}&primer_puesto=${encodeURIComponent(p1)}&segundo_puesto=${encodeURIComponent(p2)}&tercer_puesto=${encodeURIComponent(p3)}&cuarto_puesto=${encodeURIComponent(p4)}&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=respuestaEscritura`;
-
-        const script = document.createElement('script');
-        script.id = 'jsonpScriptWrite';
-        script.src = URL_API + queryParams;
-
-        // Si la URL está rota o Google no responde, saltará este aviso visual
-        script.onerror = function() {
-            statusDiv.style.backgroundColor = "#f8d7da";
-            statusDiv.style.color = "#721c24";
-            statusDiv.innerText = "Error crítico: La URL del Script de Google no responde. Revisa tu constante URL_API.";
-            boton.disabled = false;
-            if (document.getElementById('jsonpScriptWrite')) document.getElementById('jsonpScriptWrite').remove();
-        };
-
-        document.body.appendChild(script);
-    });
-</script>
-</body>
-</html>
+        if (!grupoSeleccionado) {
+            // Si eligen la opción vacía, deshabilitamos los puestos
+            selectoresPuestos.forEach(select
