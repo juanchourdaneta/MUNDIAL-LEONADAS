@@ -11,24 +11,24 @@
         .usuario-titulo { color: #28a745; font-weight: bold; font-size: 1.2rem; text-align: center; margin-bottom: 20px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 0.95rem; }
+        th, td { border: 1px solid #ddd; padding: 12px 10px; text-align: center; font-size: 0.95rem; }
         th { background-color: #007bff; color: white; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
         
         .loading { text-align: center; font-weight: bold; padding: 20px; color: #555; }
-        .btn-volver { display: block; width: fit-content; margin: 20px auto 0 auto; background-color: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.95rem; text-align: center; }
+        .btn-volver { display: block; width: fit-content; margin: 25px auto 0 auto; background-color: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.95rem; text-align: center; }
         .btn-volver:hover { background-color: #5a6268; }
-        #mensajeVacio { display: none; text-align: center; color: #dc3545; font-weight: bold; margin-top: 20px; }
+        #mensajeVacio { display: none; text-align: center; color: #dc3545; font-weight: bold; margin: 20px padding: 10px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>Mis Pronósticos Registrados</h2>
+    <h2>Mis Pronósticos Guardados</h2>
     <div id="nombreUsuario" class="usuario-titulo">Cargando datos...</div>
 
-    <div id="estadoCarga" class="loading">Buscando tus datos en Google Sheets...</div>
-    <div id="mensajeVacio">Aún no has registrado pronósticos para ningún grupo.</div>
+    <div id="estadoCarga" class="loading">Conectando con la base de datos...</div>
+    <div id="mensajeVacio">Aún no has registrado ningún pronóstico en la quiniela.</div>
 
     <table id="tablaResultados" style="display: none;">
         <thead>
@@ -44,25 +44,71 @@
             </tbody>
     </table>
 
-    <a href="pronostico.html" class="btn-volver">← Volver a Cargar Pronósticos</a>
+    <a href="pronostico.html" class="btn-volver">← Volver al Formulario</a>
 </div>
 
 <script>
-    // 1. Validar sesión del usuario
+    // 1. Obtener sesión activa
     const usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Juancho";
     document.getElementById('nombreUsuario').innerText = `Participante: ${usuarioLogueado} 🏆`;
+
+    const estadoCarga = document.getElementById('estadoCarga');
+    const mensajeVacio = document.getElementById('mensajeVacio');
+    const tablaResultados = document.getElementById('tablaResultados');
+    const cuerpoTabla = document.getElementById('cuerpoTabla');
 
     // 🚨 REVISA ESTA URL: Asegúrate de colocar tu enlace personal de Google Apps Script
     const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
 
-    // Reutilizamos el backend para traernos la lista de grupos, pero modificaremos la respuesta 
-    // solicitando una consulta extendida en el Apps Script si es necesario o pintando lo disponible.
-    // Para no obligarte a cambiar el código de Google Sheets otra vez, vamos a hacer que el backend actual 
-    // nos diga los grupos y usaremos una estrategia inteligente:
-    
-    // NOTA: Como tu backend actual con "verificar_grupos" solo devuelve los nombres de los grupos para ahorrar datos,
-    // vamos a hacer una adaptación directa. Si necesitas ver las posiciones exactas (1, 2, 3, 4) guardadas en la tabla,
-    // avísame y modificamos el backend. Por ahora, este script te listará los grupos que tienes bloqueados con éxito.
+    // 2. Función de consulta de registros completos
+    function cargarDetallePronosticos() {
+        // Callback global JSONP
+        window.renderizarTablaResultados = function(res) {
+            estadoCarga.style.display = "none";
+
+            if (res.status === "success") {
+                const registros = res.datos;
+
+                if (registros.length === 0) {
+                    mensajeVacio.style.display = "block";
+                    tablaResultados.style.display = "none";
+                } else {
+                    mensajeVacio.style.display = "none";
+                    tablaResultados.style.display = "table";
+                    cuerpoTabla.innerHTML = ""; // Limpiar filas de prueba anteriores
+
+                    // Insertar fila por fila los datos obtenidos
+                    registros.forEach(item => {
+                        const fila = document.createElement('tr');
+                        fila.innerHTML = `
+                            <td><strong>${item.grupo}</strong></td>
+                            <td>${item.p1}</td>
+                            <td>${item.p2}</td>
+                            <td>${item.p3}</td>
+                            <td>${item.p4}</td>
+                        `;
+                        cuerpoTabla.appendChild(fila);
+                    });
+                }
+            } else {
+                estadoCarga.style.display = "block";
+                estadoCarga.style.color = "#dc3545";
+                estadoCarga.innerText = "Error al obtener datos: " + res.message;
+            }
+
+            // Limpieza del nodo Script inyectado
+            if (document.getElementById('jsonpScriptDetail')) document.getElementById('jsonpScriptDetail').remove();
+        };
+
+        const queryParams = `?Accion=consultar_detalle&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=renderizarTablaResultados`;
+        const script = document.createElement('script');
+        script.id = 'jsonpScriptDetail';
+        script.src = URL_API + queryParams;
+        document.body.appendChild(script);
+    }
+
+    // Ejecutar la consulta al abrir la página
+    cargarDetallePronosticos();
 </script>
 </body>
 </html>
