@@ -1,0 +1,21 @@
+---
+title: "Mundial"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    vertical_layout: scroll
+    
+---
+<style>
+.navbar {
+  background-color: #203864;
+  border-color: #1967be;
+}
+</style>
+
+```{r setup, include=FALSE}
+
+
+```
+
