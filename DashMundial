@@ -4,7 +4,9 @@ library(reactable)
 library(dplyr)
 library(bslib)
 library(fontawesome)
-library(googlesheets4) # <-- ¡No olvides cargar esta librería!
+library(googlesheets4) 
+library(ggplot2)
+library(plotly)
 
 # ==============================================================================
 # 1. CARGA DE DATOS Y CONFIGURACIÓN 
@@ -98,7 +100,50 @@ ui <- page_navbar(
              )
       )
     )
+  ), ### hasta acá va bien 
+  
+  
+  # PESTAÑA 3: REPORTE INDIVIDUAL
+  nav_panel(
+    title = "Estadísticas grupos",
+    
+    # 1. Filtro Superior (Garantiza orden correcto arriba en PC y Celular)
+    fluidRow(
+      column(12,
+             div(class = "card-filtro",
+                 fluidRow(
+                   column(8, 
+                          h3("Filtrar", style = "margin-top:0; color: #203864; font-weight: bold; font-size: 18px;"),
+                          selectInput("grupo", "Seleccionar grupo:", choices = unique(df$grupo), width = "100%")
+                   ),
+                   
+                 )
+             )
+      )
+    ),
+    
+    # 2. Indicadores en Fila (Ancho 4-4-4 = 12 perfecto en PC, apilados en celular)
+    fluidRow(
+      #column(4, uiOutput("box_campeon")),
+      #column(4, uiOutput("box_subcampeon")),
+      #column(4, uiOutput("puntos"))
+    ),
+    
+    tags$br(),
+    
+    # 3. Detalle de Tabla
+    fluidRow(
+      column(12,
+             card(
+               card_header(tagList(fa("table"), "Detalle por jugadores")),
+               reactableOutput("tabla_resulgrupos")
+             )
+      )
+    )
   ),
+  
+  
+  
 )
 
 
@@ -191,14 +236,53 @@ server <- function(input, output, session) {
   
   # Lógica de Estadísticas (Placeholder)
   output$grafico_stats <- renderPlot({
-    # Un gráfico de ejemplo de los puntajes totales por jugador
-    library(ggplot2)
-    df_stats <- df %>% group_by(creadoPor) %>% summarise(Total = sum(Puntaje, na.rm = TRUE))
-    ggplot(df_stats, aes(x = reorder(creadoPor, Total), y = Total, fill = Total)) +
-      geom_col() + coord_flip() + theme_minimal() + 
+    
+    
+    #df <- df %>% group_by(creadoPor) %>% summarise(Total = sum(Puntaje, na.rm = TRUE))
+    df <- df %>% group_by(creadoPor) %>% summarise(Total = sum(Puntaje, na.rm = TRUE)) %>% arrange(desc(Total))
+    
+    ggplot(df, aes(x = reorder(creadoPor, Total), y = Total, fill = Total)) +
+      geom_col() + 
+      geom_text(aes(label = Total), hjust = 1.1, color = "white", fontface = "bold") + 
+      coord_flip() + 
+      theme_minimal() + 
       labs(x = "Jugador", y = "Puntaje Acumulado") +
       scale_fill_gradient(low = "#1f77b4", high = "#203864")
+    
+    
+    #ggplot(df, aes(x = reorder(creadoPor, Total), y = Total, fill = Total)) +
+      #geom_col() + coord_flip() + theme_minimal() + 
+      #labs(x = "Jugador", y = "Puntaje Acumulado") +
+      #scale_fill_gradient(low = "#1f77b4", high = "#203864")
   })
+  
+  
+  output$tabla_resulgrupos <- renderReactable({
+    
+    df <- datos_df()$df
+    
+    df <- filter(df, df$grupo==input$grupo)
+    
+    df <- df %>% select(creadoPor,primerPuesto,segundoPuesto,tercerPuesto,cuartoPuesto,Puntaje) 
+    
+    reactable(df,
+              bordered = TRUE,
+              highlight = TRUE,
+              pagination = FALSE,
+              defaultColDef = colDef(
+                align = "center", # Centra el contenido de las celdas
+                headerStyle = list(
+                  background = "#1f77b4", # Color de fondo del encabezado (Azul en este caso)
+                  color = "#ffffff",      # Color del texto del encabezado (Blanco)
+                  fontWeight = "bold"     # Texto en negrita
+                )
+              ),)
+    
+    
+  })
+  
+  
+  
 }
 
 shinyApp(ui, server)
