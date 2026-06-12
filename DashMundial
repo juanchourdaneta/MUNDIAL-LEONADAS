@@ -150,7 +150,7 @@ ui <- page_navbar(
 # --- SERVER ---
 server <- function(input, output, session) {
   
-  datos_df <- reactive({
+  datos_df <- reactive({ ############### función de los datos
     
     url_sheet <- "https://docs.google.com/spreadsheets/d/1HMWYujiB5sk1sdKecx-eIXrd0H5lPXXVhKBJRkz_pdg/edit?usp=sharing"
     
@@ -166,7 +166,7 @@ server <- function(input, output, session) {
 
   
   ### Lógica del campeón
-  output$box_campeon <- renderUI({
+  output$box_campeon <- renderUI({ ############### Cálculo del campeon
     
     dfcampeon <- datos_df()$campeones
   
@@ -180,7 +180,7 @@ server <- function(input, output, session) {
       style = "border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);")
   })
   
-  output$box_subcampeon <- renderUI({
+  output$box_subcampeon <- renderUI({ ############### Cálculo del subcampeon
     
     dfcampeon <- datos_df()$campeones
     
@@ -195,7 +195,7 @@ server <- function(input, output, session) {
     
   })
   
-  output$puntos <- renderUI({
+  output$puntos <- renderUI({ ############### Cálculo del puntaje
     
     df <- datos_df()$df
     
@@ -209,6 +209,22 @@ server <- function(input, output, session) {
       style = "border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);")
     
   })
+  
+  output$ranking <- renderUI({ ############### Cálculo del puntaje
+    
+    df <- datos_df()$df
+    
+    df <- filter(df, df$creadoPor==input$jugador)
+    
+    value_box(
+      title = "Puntos",
+      value = sum(df$Puntaje),
+      showcase = icon("medal"),
+      theme = value_box_theme(bg = "#ffffff", fg = "#1f77b4"), 
+      style = "border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);")
+    
+  })
+  
   
   output$tabla_resultados <- renderReactable({
     
@@ -257,13 +273,15 @@ server <- function(input, output, session) {
   })
   
   
-  output$tabla_resulgrupos <- renderReactable({
+  output$tabla_resulgrupos <- renderReactable({ ##### Estadísticas de los grupos
     
     df <- datos_df()$df
     
     df <- filter(df, df$grupo==input$grupo)
     
     df <- df %>% select(creadoPor,primerPuesto,segundoPuesto,tercerPuesto,cuartoPuesto,Puntaje) 
+    
+    df <- df %>% arrange(desc(Puntaje))
     
     reactable(df,
               bordered = TRUE,
