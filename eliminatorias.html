@@ -10,7 +10,7 @@
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
 
     <header class="bg-blue-900 text-white py-6 shadow-md text-center">
-        <h1 class="text-3xl font-bold uppercase tracking-wider">Control de Resultados</h1>
+        <h1 class="text-3xl font-bold uppercase tracking-wider">Polla Léon - Mundial 2026</h1>
         <p class="text-blue-200 text-sm mt-1">Fase actual: Dieciseisavos de Final</p>
     </header>
 
@@ -44,22 +44,22 @@
     <script>
         // Data inicial basada en tu estructura de Excel
         const initialMatches = [
-            { id: 1, etapa: "DIECISEISAVOS", equipo1: "Alemania", res1: "0", equipo2: "ABCDF", res2: "0" },
+            { id: 1, etapa: "DIECISEISAVOS", equipo1: "Alemania", res1: "", equipo2: "ABCDF", res2: "" },
             { id: 2, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "", equipo2: "CDFGH", res2: "" },
             { id: 3, etapa: "DIECISEISAVOS", equipo1: "República de Corea", res1: "", equipo2: "Canadá", res2: "" },
             { id: 4, etapa: "DIECISEISAVOS", equipo1: "Suecia", res1: "", equipo2: "Marruecos", res2: "" },
             { id: 5, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" },
             { id: 6, etapa: "DIECISEISAVOS", equipo1: "Uruguay", res1: "", equipo2: "Por Definir", res2: "" },
-            { id: 7, etapa: "DIECISEISAVOS", equipo1: "Estados Unidos", res1: "3", equipo2: "BEFIJ", res2: "" },
-            { id: 8, etapa: "DIECISEISAVOS", equipo1: "Nueva Zelanda", res1: "3", equipo2: "AEHIJ", res2: "" },
+            { id: 7, etapa: "DIECISEISAVOS", equipo1: "Estados Unidos", res1: "", equipo2: "BEFIJ", res2: "" },
+            { id: 8, etapa: "DIECISEISAVOS", equipo1: "Nueva Zelanda", res1: "", equipo2: "AEHIJ", res2: "" },
             { id: 9, etapa: "DIECISEISAVOS", equipo1: "Escocia", res1: "", equipo2: "Japón", res2: "" },
             { id: 10, etapa: "DIECISEISAVOS", equipo1: "Costa de Marfil", res1: "", equipo2: "Por Definir", res2: "" },
-            { id: 11, etapa: "DIECISEISAVOS", equipo1: "México", res1: "3", equipo2: "CEFHI", res2: "" },
-            { id: 12, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "3", equipo2: "EHIJK", res2: "" },
+            { id: 11, etapa: "DIECISEISAVOS", equipo1: "México", res1: "", equipo2: "CEFHI", res2: "" },
+            { id: 12, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "", equipo2: "EHIJK", res2: "" },
             { id: 13, etapa: "DIECISEISAVOS", equipo1: "Arabia Saudí", res1: "", equipo2: "Por Definir", res2: "" },
             { id: 14, etapa: "DIECISEISAVOS", equipo1: "Australia", res1: "", equipo2: "Irán", res2: "" },
-            { id: 15, etapa: "DIECISEISAVOS", equipo1: "Suiza", res1: "3", equipo2: "EFGIJ", res2: "" },
-            { id: 16, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "3", equipo2: "DEIJL", res2: "" }
+            { id: 15, etapa: "DIECISEISAVOS", equipo1: "Suiza", res1: "", equipo2: "EFGIJ", res2: "" },
+            { id: 16, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "", equipo2: "DEIJL", res2: "" }
         ];
 
         const matches = JSON.parse(localStorage.getItem('tournament_matches')) || initialMatches;
