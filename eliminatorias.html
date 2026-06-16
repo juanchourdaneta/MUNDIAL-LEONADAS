@@ -25,7 +25,11 @@
             <div id="matchesContainer" class="grid gap-4 md:grid-cols-2">
                 </div>
 
-            <div class="mt-8 flex justify-end sticky bottom-4">
+            <div class="mt-8 flex justify-between items-center sticky bottom-4 bg-gray-100/80 backdrop-blur-sm p-4 rounded-xl shadow-xs">
+                <button type="button" onclick="goBack()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-200 transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+                
                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-200 transform hover:scale-105 flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-save"></i> Guardar Todos los Resultados
                 </button>
@@ -39,7 +43,6 @@
 
     <script>
         // Data inicial basada en tu estructura de Excel
-        // Se definen marcadores vacíos ("") o por defecto si venían con datos (ej. el 3 de tu Excel)
         const initialMatches = [
             { id: 1, etapa: "DIECISEISAVOS", equipo1: "Alemania", res1: "3", equipo2: "ABCDF", res2: "" },
             { id: 2, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "", equipo2: "CDFGH", res2: "" },
@@ -59,12 +62,9 @@
             { id: 16, etapa: "DIECISEISAVOS", equipo1: "Por Definir", res1: "3", equipo2: "DEIJL", res2: "" }
         ];
 
-        // Cargar datos guardados previamente en el navegador (LocalStorage) o usar los iniciales
         const matches = JSON.parse(localStorage.getItem('tournament_matches')) || initialMatches;
-
         const container = document.getElementById('matchesContainer');
 
-        // Renderizar los partidos en la interfaz
         function renderMatches() {
             container.innerHTML = matches.map(match => `
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
@@ -102,7 +102,6 @@
             `).join('');
         }
 
-        // Procesar y simular el guardado de datos
         function saveResults(event) {
             event.preventDefault();
             
@@ -114,10 +113,8 @@
                 match.res2 = r2;
             });
 
-            // Guardar localmente para que no se borre al recargar la página
             localStorage.setItem('tournament_matches', JSON.stringify(matches));
 
-            // Mostrar alerta de éxito temporal
             const alert = document.getElementById('successAlert');
             alert.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -129,7 +126,15 @@
             console.log("Datos listos para enviar a base de datos:", matches);
         }
 
-        // Inicializar la vista
+        // Función para el botón volver
+        function goBack() {
+            // Opción 1: Regresar a la página anterior en el historial del navegador
+            window.history.back();
+            
+            // Opción 2: Si prefieres que redirija a una URL fija (ej. index.html), descomenta la siguiente línea:
+            // window.location.href = 'index.html';
+        }
+
         renderMatches();
     </script>
 </body>
