@@ -104,18 +104,12 @@
             */
         ];
 
-        // URL de tu Google Apps Script
         const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
-
-        // Obtener el usuario participante logueado para independizar los datos
         const usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Anonimo";
-        
-        // La clave de almacenamiento ahora cambia según el usuario (Ej: tournament_matches_juan)
         const CLAVE_LOCAL = 'tournament_matches_' + usuarioLogueado.toLowerCase().replace(/\s+/g, '_');
 
-        // Intentamos cargar lo que este usuario específico tenía guardado localmente, si no, cargamos los iniciales vacíos
-        const matches = JSON.parse(localStorage.getItem(CLAVE_LOCAL)) || JSON.parse(JSON.stringify(initialMatches));
-        
+        // Carga inicial (preventiva)
+        let matches = JSON.parse(localStorage.getItem(CLAVE_LOCAL)) || JSON.parse(JSON.stringify(initialMatches));
         const container = document.getElementById('matchesContainer');
 
         function renderMatches() {
@@ -155,59 +149,73 @@
             `).join('');
         }
 
-       function saveResults(event) {
+        // ========================================================
+        // NUEVA FUNCIÓN: CARGAR DATOS REALES DESDE EL EXCEL
+        // ========================================================
+        function cargarDatosDesdeGoogle() {
+            // Callback global para recibir la consulta
+            window.procesarConsultaFaseFinal = function(response) {
+                if (response.status === "success" && response.datos && response.datos.length > 0) {
+                    
+                    // Cruzamos los datos que llegaron de Google con nuestra estructura
+                    response.datos.forEach(partidoGuardado => {
+                        let localMatch = matches.find(m => m.id === partidoGuardado.id);
+                        if (localMatch) {
+                            localMatch.res1 = partidoGuardado.res1;
+                            localMatch.res2 = partidoGuardado.res2;
+                        }
+                    });
+
+                    // Sincronizamos el localStorage con lo real de la base de datos
+                    localStorage.setItem(CLAVE_LOCAL, JSON.stringify(matches));
+                    
+                    // Volvemos a pintar los partidos con los resultados reales
+                    renderMatches();
+                }
+                
+                const scriptViejo = document.getElementById('jsonpConsultaScript');
+                if (scriptViejo) scriptViejo.remove();
+            };
+
+            // Inyección del script de consulta
+            const script = document.createElement('script');
+            script.id = 'jsonpConsultaScript';
+            script.src = `${URL_API}?Accion=consultar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=procesarConsultaFaseFinal`;
+            document.body.appendChild(script);
+        }
+
+        function saveResults(event) {
             event.preventDefault();
-            
             const submitBtn = event.target.querySelector('button[type="submit"]');
             
-            // Actualizar el array local con lo que escribió el usuario
             matches.forEach(match => {
                 const r1 = document.querySelector(`input[name="res1_${match.id}"]`).value;
                 const r2 = document.querySelector(`input[name="res2_${match.id}"]`).value;
-                
                 match.res1 = r1;
                 match.res2 = r2;
             });
 
-            // GUARDADO COREGIDO: Ahora guarda exclusivamente en el espacio de ESTE usuario
             localStorage.setItem(CLAVE_LOCAL, JSON.stringify(matches));
-
-            // Deshabilitar botón mientras procesa en la nube
             if(submitBtn) submitBtn.disabled = true;
 
-            // 1. Crear función callback global para recibir la respuesta de Google
             window.procesarRespuestaFaseFinal = function(response) {
                 if (response.status === "success") {
                     const alert = document.getElementById('successAlert');
-                    alert.classList.remove('hidden');
+                    if (alert) alert.classList.remove('hidden');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
-                    setTimeout(() => {
-                        alert.classList.add('hidden');
-                    }, 4000);
+                    setTimeout(() => { if (alert) alert.classList.add('hidden'); }, 4000);
                 } else {
                     alert("Error al guardar en Google Sheets: " + response.message);
                 }
-                
                 if(submitBtn) submitBtn.disabled = false;
                 const scriptViejo = document.getElementById('jsonpFinalScript');
                 if (scriptViejo) scriptViejo.remove();
             };
 
             const partidosCodificados = encodeURIComponent(JSON.stringify(matches));
-
-            // 2. Inyectar Script JSONP para mandarlo a la hoja 'Final'
             const script = document.createElement('script');
             script.id = 'jsonpFinalScript';
             script.src = `${URL_API}?Accion=guardar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&partidos=${partidosCodificados}&callback=procesarRespuestaFaseFinal`;
-            
-            script.onerror = function() {
-                alert("Error de comunicación con el servidor de Google Apps Script.");
-                if(submitBtn) submitBtn.disabled = false;
-                const scriptViejo = document.getElementById('jsonpFinalScript');
-                if (scriptViejo) scriptViejo.remove();
-            };
-
             document.body.appendChild(script);
         }
 
@@ -215,8 +223,9 @@
             window.location.href = 'pronostico.html';
         }
 
-        renderMatches();
-        
+        // Ejecución inicial al abrir la página
+        renderMatches();             // 1. Dibuja la base rápido
+        cargarDatosDesdeGoogle();    // 2. Trae de inmediato los datos del usuario        
     </script>
 </body>
 </html>
