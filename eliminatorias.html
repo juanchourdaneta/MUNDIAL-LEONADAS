@@ -184,6 +184,9 @@
             event.preventDefault();
             const submitBtn = event.target.querySelector('button[type="submit"]');
             
+            // 1. Guardamos el texto original del botón para restaurarlo si hay un error
+            const textoOriginal = submitBtn.innerHTML;
+
             matches.forEach(match => {
                 const r1 = document.querySelector(`input[name="res1_${match.id}"]`).value;
                 const r2 = document.querySelector(`input[name="res2_${match.id}"]`).value;
@@ -192,7 +195,20 @@
             });
 
             localStorage.setItem(CLAVE_LOCAL, JSON.stringify(matches));
-            if(submitBtn) submitBtn.disabled = true;
+            
+            // 2. CAMBIO VISUAL: Volvemos el botón "medio inhabilitado" y cambiamos el texto
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Guardando...
+                `;
+                // Añadimos opacidad y cambiamos el cursor para que se note inactivo
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
 
             window.procesarRespuestaFaseFinal = function(response) {
                 if (response.status === "success") {
@@ -200,7 +216,6 @@
                     if (alert) alert.classList.remove('hidden');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     
-                    // Muestra el mensaje por 3 segundos y luego redirige solo
                     setTimeout(() => { 
                         if (alert) alert.classList.add('hidden'); 
                         window.location.href = 'pronostico.html'; 
@@ -208,8 +223,14 @@
                     
                 } else {
                     alert("Error al guardar en Google Sheets: " + response.message);
+                    // 3. RESTAURACIÓN: Si falla, el botón vuelve a la normalidad
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = textoOriginal;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
                 }
-                if(submitBtn) submitBtn.disabled = false;
+                
                 const scriptViejo = document.getElementById('jsonpFinalScript');
                 if (scriptViejo) scriptViejo.remove();
             };
