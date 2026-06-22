@@ -104,6 +104,9 @@
             */
         ];
 
+        // URL de tu Google Apps Script
+        const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+
         const matches = JSON.parse(localStorage.getItem('tournament_matches')) || initialMatches;
         const container = document.getElementById('matchesContainer');
 
@@ -147,6 +150,11 @@
         function saveResults(event) {
             event.preventDefault();
             
+            // Obtener el usuario participante logueado
+            const usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Anonimo";
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            
+            // Actualizar el array local con lo que escribió el usuario
             matches.forEach(match => {
                 const r1 = document.querySelector(`input[name="res1_${match.id}"]`).value;
                 const r2 = document.querySelector(`input[name="res2_${match.id}"]`).value;
@@ -155,26 +163,55 @@
                 match.res2 = r2;
             });
 
+            // Guardar copia local preventiva
             localStorage.setItem('tournament_matches', JSON.stringify(matches));
 
-            const alert = document.getElementById('successAlert');
-            alert.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            setTimeout(() => {
-                alert.classList.add('hidden');
-            }, 4000);
+            // Deshabilitar botón mientras procesa
+            if(submitBtn) submitBtn.disabled = true;
 
-            console.log("Datos listos para enviar a base de datos:", matches);
+            // 1. Crear función callback global para recibir la respuesta de Google
+            window.procesarRespuestaFaseFinal = function(response) {
+                if (response.status === "success") {
+                    const alert = document.getElementById('successAlert');
+                    alert.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    setTimeout(() => {
+                        alert.classList.add('hidden');
+                    }, 4000);
+                } else {
+                    alert("Error al guardar en Google Sheets: " + response.message);
+                }
+                
+                if(submitBtn) submitBtn.disabled = false;
+                const scriptViejo = document.getElementById('jsonpFinalScript');
+                if (scriptViejo) scriptViejo.remove();
+            };
+
+            // Convertimos los partidos a texto plano JSON para mandarlo en un solo parámetro de URL
+            const partidosCodificados = encodeURIComponent(JSON.stringify(matches));
+
+            // 2. Inyectar Script JSONP
+            const script = document.createElement('script');
+            script.id = 'jsonpFinalScript';
+            script.src = `${URL_API}?Accion=guardar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&partidos=${partidosCodificados}&callback=procesarRespuestaFaseFinal`;
+            
+            script.onerror = function() {
+                alert("Error de comunicación con el servidor de Google Apps Script.");
+                if(submitBtn) submitBtn.disabled = false;
+                const scriptViejo = document.getElementById('jsonpFinalScript');
+                if (scriptViejo) scriptViejo.remove();
+            };
+
+            document.body.appendChild(script);
         }
 
-        // Función para el botón volver
         function goBack() {
-            
             window.location.href = 'pronostico.html';
         }
 
         renderMatches();
+        
     </script>
 </body>
 </html>
