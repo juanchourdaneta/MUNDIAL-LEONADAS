@@ -149,11 +149,8 @@
             `).join('');
         }
 
-        // ========================================================
         // NUEVA FUNCIÓN: CARGAR DATOS REALES DESDE EL EXCEL
-        // ========================================================
         function cargarDatosDesdeGoogle() {
-            // Callback global para recibir la consulta
             window.procesarConsultaFaseFinal = function(response) {
                 if (response.status === "success" && response.datos && response.datos.length > 0) {
                     
@@ -177,7 +174,6 @@
                 if (scriptViejo) scriptViejo.remove();
             };
 
-            // Inyección del script de consulta
             const script = document.createElement('script');
             script.id = 'jsonpConsultaScript';
             script.src = `${URL_API}?Accion=consultar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=procesarConsultaFaseFinal`;
@@ -215,6 +211,7 @@
             const partidosCodificados = encodeURIComponent(JSON.stringify(matches));
             const script = document.createElement('script');
             script.id = 'jsonpFinalScript';
+            // Homologamos usando '&Accion=' para garantizar sincronía total con Apps Script
             script.src = `${URL_API}?Accion=guardar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&partidos=${partidosCodificados}&callback=procesarRespuestaFaseFinal`;
             document.body.appendChild(script);
         }
@@ -224,8 +221,8 @@
         }
 
         // Ejecución inicial al abrir la página
-        renderMatches();             // 1. Dibuja la base rápido
-        cargarDatosDesdeGoogle();    // 2. Trae de inmediato los datos del usuario        
+        renderMatches();             
+        cargarDatosDesdeGoogle();
     </script>
 </body>
 </html>
