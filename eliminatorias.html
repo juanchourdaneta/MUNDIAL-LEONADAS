@@ -88,8 +88,21 @@
         const usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Anonimo";
         const CLAVE_LOCAL = 'tournament_matches_' + usuarioLogueado.toLowerCase().replace(/\s+/g, '_');
 
-        // Carga inicial (preventiva)
-        let matches = JSON.parse(localStorage.getItem(CLAVE_LOCAL)) || JSON.parse(JSON.stringify(initialMatches));
+        // Carga inicial inteligente: Mantiene la estructura del código y le inyecta los resultados del localStorage
+        const datosLocales = JSON.parse(localStorage.getItem(CLAVE_LOCAL)) || [];
+        let matches = JSON.parse(JSON.stringify(initialMatches)); // Copia limpia de la estructura actualizada
+
+        // Si el usuario ya tenía cosas guardadas, le cruzamos sus resultados previos
+        if (datosLocales.length > 0) {
+            matches.forEach(partidoCodigo => {
+                const partidoGuardado = datosLocales.find(m => m.id === partidoCodigo.id);
+                if (partidoGuardado) {
+                    partidoCodigo.res1 = partidoGuardado.res1;
+                    partidoCodigo.res2 = partidoGuardado.res2;
+                }
+            });
+        }
+
         const container = document.getElementById('matchesContainer');
 
         function renderMatches() {
