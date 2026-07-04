@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fase final mundial</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-blue-900 text-white py-6 shadow-md text-center">
+        <h1 class="text-3xl font-bold uppercase tracking-wider">Polla Léon - Mundial 2026</h1>
+        <p class="text-blue-200 text-sm mt-1">Fase actual: Octavos de Final </p>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        
+        <div id="successAlert" class="hidden mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg flex items-center shadow-sm">
+            <i class="fas fa-check-circle mr-2 text-lg"></i>
+            <span>¡Resultados guardados exitosamente en el sistema!</span>
+        </div>
+
+        <form id="tournamentForm" onsubmit="saveResults(event)">
+            <div id="matchesContainer" class="grid gap-4 md:grid-cols-2">
+                </div>
+
+            <div class="mt-8 flex justify-between items-center sticky bottom-4 bg-gray-100/80 backdrop-blur-sm p-4 rounded-xl shadow-xs">
+                <button type="button" onclick="goBack()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-200 transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+                
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-200 transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-save"></i> Guardar los resultados
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 text-center py-4 text-xs mt-auto">
+        Polla león &copy; 2026
+    </footer>
+
+    <script>
+        // Data inicial basada en tu estructura de Excel
+        const initialMatches = [
+            // ==========================================
+            // OCTAVOS DE FINAL
+            // ==========================================
+           
+            { id: 17, etapa: "OCTAVOS", equipo1: "Paraguay", res1: "", equipo2: "Francia", res2: "" },
+            { id: 18, etapa: "OCTAVOS", equipo1: "Canadá", res1: "", equipo2: "Marruecos", res2: "" },
+            { id: 19, etapa: "OCTAVOS", equipo1: "Portugal", res1: "", equipo2: "España", res2: "" },
+            { id: 20, etapa: "OCTAVOS", equipo1: "Estados Unidos", res1: "", equipo2: "Belgica", res2: "" },
+            { id: 21, etapa: "OCTAVOS", equipo1: "Brasil", res1: "", equipo2: "Noruega", res2: "" },
+            { id: 22, etapa: "OCTAVOS", equipo1: "México", res1: "", equipo2: "Inglaterra", res2: "" },
+            { id: 23, etapa: "OCTAVOS", equipo1: "Argentina", res1: "", equipo2: "Egipto", res2: "" },
+            { id: 24, etapa: "OCTAVOS", equipo1: "Suiza", res1: "", equipo2: "Colombia", res2: "" }
+            
+
+            // ==========================================
+            // CUARTOS DE FINAL (Descomentar para activar)
+            // ==========================================
+            /*
+            ,{ id: 25, etapa: "CUARTOS", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" },
+            { id: 26, etapa: "CUARTOS", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" },
+            { id: 27, etapa: "CUARTOS", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" },
+            { id: 28, etapa: "CUARTOS", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" }
+            */
+
+            // ==========================================
+            // SEMIFINAL (Descomentar para activar)
+            // ==========================================
+            /*
+            ,{ id: 29, etapa: "SEMIFINAL", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" },
+            { id: 30, etapa: "SEMIFINAL", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" }
+            */
+
+            // ==========================================
+            // FINAL (Descomentar para activar)
+            // ==========================================
+            /*
+            ,{ id: 31, etapa: "FINAL", equipo1: "Por Definir", res1: "", equipo2: "Por Definir", res2: "" }
+            */
+        ];
+
+        const URL_API = "https://script.google.com/macros/s/AKfycbxflM9LaF5-orYtPKLzMXaUuPYSNqFDZqIW7_vFivL6c60Ax6NudSwDrJ6fV8kK4Q1E/exec";
+        const usuarioLogueado = localStorage.getItem('usuarioParticipante') || "Anonimo";
+        const CLAVE_LOCAL = 'tournament_matches_' + usuarioLogueado.toLowerCase().replace(/\s+/g, '_');
+
+        // Carga inicial (preventiva)
+        let matches = JSON.parse(localStorage.getItem(CLAVE_LOCAL)) || JSON.parse(JSON.stringify(initialMatches));
+        const container = document.getElementById('matchesContainer');
+
+        function renderMatches() {
+            container.innerHTML = matches.map(match => `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-3">
+                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">ID: ${match.id}</span>
+                        <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">${match.etapa}</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-7 items-center gap-2">
+                        <div class="col-span-2 text-right font-medium text-gray-700 truncate text-sm md:text-base" title="${match.equipo1}">
+                            ${match.equipo1}
+                        </div>
+                        
+                        <div class="col-span-3 flex justify-center items-center gap-1">
+                            <input type="number" 
+                                   name="res1_${match.id}" 
+                                   min="0" 
+                                   value="${match.res1}" 
+                                   class="w-12 h-10 text-center border-2 border-gray-300 rounded-lg font-bold text-lg focus:outline-none focus:border-blue-500 bg-gray-50 focus:bg-white transition"
+                                   placeholder="-">
+                            <span class="text-gray-400 font-bold px-1">vs</span>
+                            <input type="number" 
+                                   name="res2_${match.id}" 
+                                   min="0" 
+                                   value="${match.res2}" 
+                                   class="w-12 h-10 text-center border-2 border-gray-300 rounded-lg font-bold text-lg focus:outline-none focus:border-blue-500 bg-gray-50 focus:bg-white transition"
+                                   placeholder="-">
+                        </div>
+                        
+                        <div class="col-span-2 text-left font-medium text-gray-700 truncate text-sm md:text-base" title="${match.equipo2}">
+                            ${match.equipo2}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // NUEVA FUNCIÓN: CARGAR DATOS REALES DESDE EL EXCEL
+        function cargarDatosDesdeGoogle() {
+            window.procesarConsultaFaseFinal = function(response) {
+                if (response.status === "success" && response.datos && response.datos.length > 0) {
+                    
+                    // Cruzamos los datos que llegaron de Google con nuestra estructura
+                    response.datos.forEach(partidoGuardado => {
+                        let localMatch = matches.find(m => m.id === partidoGuardado.id);
+                        if (localMatch) {
+                            localMatch.res1 = partidoGuardado.res1;
+                            localMatch.res2 = partidoGuardado.res2;
+                        }
+                    });
+
+                    // Sincronizamos el localStorage con lo real de la base de datos
+                    localStorage.setItem(CLAVE_LOCAL, JSON.stringify(matches));
+                    
+                    // Volvemos a pintar los partidos con los resultados reales
+                    renderMatches();
+                }
+                
+                const scriptViejo = document.getElementById('jsonpConsultaScript');
+                if (scriptViejo) scriptViejo.remove();
+            };
+
+            const script = document.createElement('script');
+            script.id = 'jsonpConsultaScript';
+            script.src = `${URL_API}?Accion=consultar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&callback=procesarConsultaFaseFinal`;
+            document.body.appendChild(script);
+        }
+
+        function saveResults(event) {
+            event.preventDefault();
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            
+            // 1. Guardamos el texto original del botón para restaurarlo si hay un error
+            const textoOriginal = submitBtn.innerHTML;
+
+            matches.forEach(match => {
+                const r1 = document.querySelector(`input[name="res1_${match.id}"]`).value;
+                const r2 = document.querySelector(`input[name="res2_${match.id}"]`).value;
+                match.res1 = r1;
+                match.res2 = r2;
+            });
+
+            localStorage.setItem(CLAVE_LOCAL, JSON.stringify(matches));
+            
+            // 2. CAMBIO VISUAL: Volvemos el botón "medio inhabilitado" y cambiamos el texto
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Guardando...
+                `;
+                // Añadimos opacidad y cambiamos el cursor para que se note inactivo
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            window.procesarRespuestaFaseFinal = function(response) {
+                if (response.status === "success") {
+                    const alert = document.getElementById('successAlert');
+                    if (alert) alert.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    setTimeout(() => { 
+                        if (alert) alert.classList.add('hidden'); 
+                        window.location.href = 'pronostico.html'; 
+                    }, 3000);
+                    
+                } else {
+                    alert("Error al guardar en Google Sheets: " + response.message);
+                    // 3. RESTAURACIÓN: Si falla, el botón vuelve a la normalidad
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = textoOriginal;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+                
+                const scriptViejo = document.getElementById('jsonpFinalScript');
+                if (scriptViejo) scriptViejo.remove();
+            };
+
+            const partidosCodificados = encodeURIComponent(JSON.stringify(matches));
+            const script = document.createElement('script');
+            script.id = 'jsonpFinalScript';
+            script.src = `${URL_API}?Accion=guardar_fase_final&creado_por=${encodeURIComponent(usuarioLogueado)}&partidos=${partidosCodificados}&callback=procesarRespuestaFaseFinal`;
+            document.body.appendChild(script);
+        }
+
+        function goBack() {
+            window.location.href = 'pronostico.html';
+        }
+
+        // Ejecución inicial al abrir la página
+        renderMatches();             
+        cargarDatosDesdeGoogle();
+        </script>
+</body>
+</html>
